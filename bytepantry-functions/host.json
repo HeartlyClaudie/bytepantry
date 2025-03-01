@@ -1,0 +1,16 @@
+{
+  "version": "2.0",
+  "extensions": {
+    "http": {
+      "routePrefix": "",
+      "cors": {
+        "allowedOrigins": [
+          "http://localhost:3000",
+          "https://bytepantry-api.azurewebsites.net",
+          "https://localhost"
+        ],
+        "supportCredentials": true
+      }
+    }
+  }
+}
