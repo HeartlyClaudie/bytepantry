@@ -1,22 +1,47 @@
 import axios from "axios";
+import { PublicClientApplication } from "@azure/msal-browser";
+import { msalConfig, loginRequest } from "./authConfig";
 
-// Load environment variables
-const API_URL = process.env.REACT_APP_API_URL || "http://bytepantry-api-hjbkd7hxfbasg7h8.canadacentral-01.azurewebsites.net";
-const AUTH_KEY = process.env.REACT_APP_AUTH_KEY || "";
+const API_URL = "http://localhost:3000"; // Replace with your actual API URL
 
-// Create Axios instance with default settings
+const msalInstance = new PublicClientApplication(msalConfig);
+
+// Get JWT Token from MSAL
+const getToken = async () => {
+  const accounts = msalInstance.getAllAccounts();
+  if (accounts.length === 0) return null;
+
+  try {
+    const response = await msalInstance.acquireTokenSilent({
+      ...loginRequest,
+      account: accounts[0],
+    });
+    return response.idToken;
+  } catch (error) {
+    console.error("Error acquiring token:", error);
+    return null;
+  }
+};
+
+// Axios instance with JWT authentication
 const api = axios.create({
   baseURL: API_URL,
-  headers: {
-    "Content-Type": "application/json",
-    Authorization: AUTH_KEY ? `Bearer ${AUTH_KEY}` : "",
-  },
+  headers: { "Content-Type": "application/json" },
 });
 
-// Fetch all pantry items
+// Attach JWT token to every request
+api.interceptors.request.use(async (config) => {
+  const token = await getToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Function to fetch pantry items
 export const getPantryItems = async () => {
   try {
-    const response = await api.get("/pantry");
+    const response = await api.get("/api/pantry");
     return response.data;
   } catch (error) {
     console.error("Error fetching pantry items:", error);
@@ -24,48 +49,16 @@ export const getPantryItems = async () => {
   }
 };
 
-// Add a new pantry item
-export const addPantryItem = async (item) => {
-  try {
-    const response = await api.post("/pantry", item);
-    return response.data;
-  } catch (error) {
-    console.error("Error adding pantry item:", error);
-    throw error;
-  }
+// Function to log out from Azure AD B2C
+export const logout = () => {
+  msalInstance.logoutPopup()
+    .then(() => {
+      localStorage.removeItem("jwtToken");
+      window.location.href = "/login"; // Redirect to login page
+    })
+    .catch(error => {
+      console.error("Logout failed:", error);
+    });
 };
 
-// Update an existing pantry item
-export const updatePantryItem = async (id, item) => {
-  try {
-    const response = await api.put(`/pantry/${id}`, item);
-    return response.data;
-  } catch (error) {
-    console.error(`Error updating pantry item ${id}:`, error);
-    throw error;
-  }
-};
-
-// Delete a pantry item
-export const deletePantryItem = async (id) => {
-  try {
-    await api.delete(`/pantry/${id}`);
-  } catch (error) {
-    console.error(`Error deleting pantry item ${id}:`, error);
-    throw error;
-  }
-};
-
-// Fetch a single pantry item by ID
-export const getPantryItemById = async (id) => {
-  try {
-    const response = await api.get(`/pantry/${id}`);
-    return response.data;
-  } catch (error) {
-    console.error(`Error fetching pantry item ${id}:`, error);
-    throw error;
-  }
-};
-
-// Export default API instance
 export default api;

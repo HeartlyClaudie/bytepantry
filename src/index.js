@@ -1,20 +1,15 @@
 import React from "react";
-import ReactDOM from "react-dom/client";
-import { BrowserRouter } from "react-router-dom";
-import { PantryProvider } from "./context/PantryContext";
+import ReactDOM from "react-dom";
 import App from "./App";
+import { PublicClientApplication } from "@azure/msal-browser";
+import { MsalProvider } from "@azure/msal-react";
+import { msalConfig } from "./authConfig";
 
-// Select the root element
-const rootElement = document.getElementById("root");
+const msalInstance = new PublicClientApplication(msalConfig);
 
-// Create React root (React 18+)
-const root = ReactDOM.createRoot(rootElement);
-
-// Render the app
-root.render(
-  <PantryProvider>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
-  </PantryProvider>
+ReactDOM.render(
+  <MsalProvider instance={msalInstance}>
+    <App />
+  </MsalProvider>,
+  document.getElementById("root")
 );

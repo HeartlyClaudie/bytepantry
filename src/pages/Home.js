@@ -1,31 +1,44 @@
-import React, { useContext, useEffect } from "react";
-import { PantryContext } from "../context/PantryContext";
-import { getPantryItems } from "../api";
+import React, { useEffect, useState } from "react";
+import { getPantryItems } from "../api"; // ✅ Ensure correct import
+import { useNavigate } from "react-router-dom";
+import { logout } from "../api";
 
 const Home = () => {
-  const { pantryItems, setPantryItems } = useContext(PantryContext);
+  const navigate = useNavigate();
+  const [pantryItems, setPantryItems] = useState([]);
 
   useEffect(() => {
-    const fetchPantry = async () => {
-      try {
-        const items = await getPantryItems();
-        setPantryItems(items);
-      } catch (error) {
-        console.error("Failed to fetch pantry items.");
-      }
-    };
-    fetchPantry();
-  }, [setPantryItems]);
+    fetchPantryItems();
+  }, []);
+
+  const fetchPantryItems = async () => {
+    try {
+      const items = await getPantryItems();
+      setPantryItems(items);
+    } catch (error) {
+      alert("Failed to fetch pantry items. Please log in again.");
+      logout();
+      navigate("/login");
+    }
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
 
   return (
-    <div>
-      <h1>My Pantry</h1>
+    <div style={{ textAlign: "center", marginTop: "20px" }}>
+      <h2>Welcome to BytePantry</h2>
+      <button onClick={handleLogout}>Logout</button>
+
+      <h3>Your Pantry Items:</h3>
       <ul>
-        {pantryItems.length > 0 ? (
-          pantryItems.map((item) => <li key={item.id}>{item.name}</li>)
-        ) : (
-          <p>No items found.</p>
-        )}
+        {pantryItems.map((item) => (
+          <li key={item.itemID}>
+            {item.name} - {item.expiryDate}
+          </li>
+        ))}
       </ul>
     </div>
   );
