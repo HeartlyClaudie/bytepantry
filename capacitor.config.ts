@@ -6,12 +6,12 @@ const config: CapacitorConfig = {
   webDir: "build",
   bundledWebRuntime: false,
   server: {
-    androidScheme: "file" // Prevents WebView from using `https://localhost`
+    cleartext: true, // ✅ Allows local connections on Android
   },
   android: {
-    allowMixedContent: true, // Allow HTTP & HTTPS content
-    webContentsDebuggingEnabled: true
-  }
+    webContentsDebuggingEnabled: true, // ✅ Enable WebView debugging
+    allowMixedContent: true, // ✅ Allows HTTP connections if needed
+  },
 };
 
 export default config;
