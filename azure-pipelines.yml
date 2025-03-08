@@ -1,0 +1,23 @@
+trigger:
+- main  # Change to your branch name if needed
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+- task: NodeTool@0
+  inputs:
+    versionSpec: '18.x'  # Use the Node.js version compatible with your React app
+
+- script: |
+    npm install
+    npm run build
+  displayName: 'Install dependencies and build'
+
+- task: AzureRmWebAppDeployment@4
+  inputs:
+    ConnectionType: 'AzureRM'
+    azureSubscription: '835397ec-a307-42b6-8a61-cf0a2be481b5'
+    appType: 'webApp'
+    WebAppName: 'bytepantry-web'
+    package: '$(System.DefaultWorkingDirectory)/build'
