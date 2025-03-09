@@ -20,7 +20,7 @@ steps:
   # Deploy to Azure Web App Service
   - task: AzureWebApp@1
     inputs:
-      azureSubscription: '835397ec-a307-42b6-8a61-cf0a2be481b5'  # Your Azure Subscription ID
+      azureSubscription: 'AzureServiceConnection-bytepantry'  # Your Azure Subscription ID
       appName: 'bytepantry-api'  # Name of your Azure App Service
       package: '.'  # Deploys the entire backend folder
       runtimeStack: 'NODE|18-lts'  # Matches App Service runtime
