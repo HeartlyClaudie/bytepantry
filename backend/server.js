@@ -4,6 +4,7 @@ const cors = require("cors");
 const bodyParser = require("body-parser");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
+const path = require("path");
 const sql = require("mssql");
 const { expressjwt: expressJwt } = require("express-jwt");
 
@@ -150,6 +151,14 @@ app.get("/api/notifications", authenticateJWT, async (req, res) => {
     console.error("Error fetching notifications:", error);
     res.status(500).send("Server error fetching notifications.");
   }
+});
+
+// Serve frontend build files
+app.use(express.static(path.join(__dirname, "../frontend/build")));
+
+// Serve index.html for all non-API routes
+app.get("*", (req, res) => {
+    res.sendFile(path.join(__dirname, "../frontend/build", "index.html"));
 });
 
 // Start the Server
