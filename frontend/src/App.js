@@ -1,6 +1,7 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Home from "./pages/Home";
+import NewItem from "./pages/NewItem";
 import Login from "./pages/Login";
 import Profile from "./pages/Profile";
 import Donation from "./pages/Donation";
@@ -19,8 +20,9 @@ const App = () => {
     <Router>
       <Routes>
         <Route path="/" element={<ProtectedRoute element={<Home />} />} />
-        <Route path="/home" element={<ProtectedRoute element={<Home />} />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/home" element={<Home />} />
+        <Route path="/newitem" element={<NewItem />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/donation" element={<Donation />} />
         <Route path="/fbselect" element={<FBSelect />} />
