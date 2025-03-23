@@ -1,35 +1,23 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { useMsal } from "@azure/msal-react";
+import { logout } from "../api";
 import { useNavigate } from "react-router-dom";
 
 export default function Home() {
   const navigate = useNavigate();
+  const { accounts } = useMsal();
+  const [userName, setUserName] = useState("");
 
-  // Example user data
-  const user = {
-    name: "Claude",
-  };
-
-  // Example item data
-  // status can be "Fresh", "Expiring Soon", or "Expired"
-  const items = [
-    { name: "Milk", expiryDate: "Mar 15, 2025", status: "Fresh" },
-    { name: "Bread", expiryDate: "Mar 14, 2025", status: "Expiring Soon" },
-    { name: "Yogurt", expiryDate: "Mar 8, 2025", status: "Expiring Soon" },
-    { name: "Chicken Thighs", expiryDate: "Mar 5, 2025", status: "Expired" },
-  ];
-
-  // Color-coded status tags
-  const getStatusClasses = (status) => {
-    switch (status) {
-      case "Fresh":
-        return "bg-green-100 text-green-600";
-      case "Expiring Soon":
-        return "bg-yellow-100 text-yellow-600";
-      case "Expired":
-        return "bg-gray-200 text-gray-600";
-      default:
-        return "bg-gray-100 text-gray-600";
+  useEffect(() => {
+    if (accounts.length > 0) {
+      const name = accounts[0].name || "User";
+      setUserName(name);
     }
+  }, [accounts]);
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
   };
 
   return (

@@ -3,26 +3,30 @@ const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const jwt = require("jsonwebtoken");
-const bcrypt = require("bcryptjs");
 const path = require("path");
 const sql = require("mssql");
 const { expressjwt: expressJwt } = require("express-jwt");
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8181;
+
+// ✅ Ensure required environment variables are set
+const requiredEnvVars = ["DATABASE_USER", "DATABASE_PASSWORD", "DATABASE_SERVER", "DATABASE_NAME", "JWT_SECRET"];
+requiredEnvVars.forEach((varName) => {
+  if (!process.env[varName]) {
+    console.warn(`⚠️ Warning: Missing environment variable ${varName}`);
+  }
+});
 
 // Middleware
-app.use(cors());
 app.use(express.json());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// CORS Configuration
-const allowedOrigins = [
-  "http://localhost:3000",
-  "https://bytepantry-api.azurewebsites.net",
-  "https://localhost"
-];
+// ✅ CORS Configuration
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(",")
+  : ["http://localhost:3000", "https://bytepantry-api.azurewebsites.net"];
 
 app.use(
   cors({
@@ -33,123 +37,96 @@ app.use(
   })
 );
 
-// Azure SQL Database Configuration
+// ✅ Azure SQL Database Configuration
 const dbConfig = {
   user: process.env.DATABASE_USER,
   password: process.env.DATABASE_PASSWORD,
   server: process.env.DATABASE_SERVER,
   database: process.env.DATABASE_NAME,
   options: {
-    encrypt: true, // Required for Azure
+    encrypt: true,
     enableArithAbort: true,
   },
 };
 
-// Connect to Azure SQL
-const connectDB = async () => {
-  try {
-    await sql.connect(dbConfig);
+// ✅ Connect to Azure SQL
+const poolPromise = sql.connect(dbConfig)
+  .then((pool) => {
     console.log("✅ Connected to Azure SQL Database!");
-  } catch (error) {
+    return pool;
+  })
+  .catch((error) => {
     console.error("❌ Database connection failed:", error);
-  }
-};
-connectDB();
+  });
 
-// Generate JWT Token
+// ✅ Generate JWT Token
 const generateToken = (user) => {
   return jwt.sign({ userID: user.userID, email: user.email }, process.env.JWT_SECRET, {
     expiresIn: process.env.TOKEN_EXPIRY || "1h",
   });
 };
 
-// Secure Routes Middleware
+// ✅ Secure Routes Middleware (Allow public access to "/", "/auth/b2c-login")
 const authenticateJWT = expressJwt({
   secret: process.env.JWT_SECRET,
   algorithms: ["HS256"],
+}).unless({ path: ["/", "/auth/b2c-login"] });
+
+app.use(authenticateJWT);
+
+// ✅ Handle Unauthorized Requests
+app.use((err, req, res, next) => {
+  if (err.name === "UnauthorizedError") {
+    console.warn(`🚨 Unauthorized Access Attempt on ${req.path}`);
+    return res.status(401).json({ error: "Unauthorized: Invalid or missing token." });
+  }
+  next();
 });
 
-// 📌 Register New User (POST /auth/register)
-app.post("/auth/register", async (req, res) => {
-  const { name, email, password } = req.body;
-  
-  if (!name || !email || !password) return res.status(400).json({ error: "All fields are required." });
-
+// ✅ Handle B2C Login (Check if user exists or insert new user)
+app.post("/auth/b2c-login", async (req, res) => {
   try {
-    const hashedPassword = await bcrypt.hash(password, 10);
-    await sql.query(
-      `INSERT INTO Users (name, email, password) VALUES ('${name}', '${email}', '${hashedPassword}')`
-    );
-    res.status(201).json({ message: "User registered successfully!" });
+    const { email, name } = req.body;
+
+    if (!email) return res.status(400).json({ error: "Email is required." });
+
+    const pool = await poolPromise;
+    const result = await pool.request().input("email", sql.NVarChar, email).query("SELECT userID FROM Users WHERE email=@email");
+
+    let userID;
+    if (result.recordset.length === 0) {
+      const insertResult = await pool
+        .request()
+        .input("name", sql.NVarChar, name || "New User")
+        .input("email", sql.NVarChar, email)
+        .query("INSERT INTO Users (name, email) OUTPUT INSERTED.userID VALUES (@name, @email)");
+
+      userID = insertResult.recordset[0].userID;
+    } else {
+      userID = result.recordset[0].userID;
+    }
+
+    const token = generateToken({ userID, email });
+    res.json({ token, userID, email });
   } catch (error) {
-    console.error("Error registering user:", error);
-    res.status(500).send("Server error registering user.");
+    console.error("❌ Error handling B2C login:", error);
+    res.status(500).send("Server error handling B2C login.");
   }
 });
 
-// 📌 User Login & Get Token (POST /auth/login)
-app.post("/auth/login", async (req, res) => {
-  const { email, password } = req.body;
-  
-  if (!email || !password) return res.status(400).json({ error: "Email and password required." });
-
+// ✅ Secure Route: Fetch Pantry Items
+app.get("/api/pantry", async (req, res) => {
   try {
-    const result = await sql.query(`SELECT * FROM Users WHERE email='${email}'`);
-    if (result.recordset.length === 0) return res.status(401).json({ error: "Invalid credentials." });
+    const pool = await poolPromise;
+    const result = await pool
+      .request()
+      .input("userID", sql.Int, req.auth.userID)
+      .query("SELECT * FROM FoodItem WHERE pantryID IN (SELECT pantryID FROM Pantry WHERE userID=@userID)");
 
-    const user = result.recordset[0];
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(401).json({ error: "Invalid credentials." });
-
-    const token = generateToken(user);
-    res.json({ token, userID: user.userID });
-  } catch (error) {
-    console.error("Error logging in user:", error);
-    res.status(500).send("Server error logging in.");
-  }
-});
-
-// 📌 Secure Route: Get Pantry Items (GET /api/pantry)
-app.get("/api/pantry", authenticateJWT, async (req, res) => {
-  try {
-    const result = await sql.query(`SELECT * FROM FoodItem WHERE pantryID IN (SELECT pantryID FROM Pantry WHERE userID=${req.auth.userID})`);
     res.json(result.recordset);
   } catch (error) {
-    console.error("Error fetching pantry items:", error);
+    console.error("❌ Error fetching pantry items:", error);
     res.status(500).send("Server error fetching pantry data.");
-  }
-});
-
-// 📌 Secure Route: Add Pantry Item (POST /api/pantry)
-app.post("/api/pantry", authenticateJWT, async (req, res) => {
-  const { name, category, barcode, expiryDate, pantryID } = req.body;
-
-  if (!name || !pantryID) {
-    return res.status(400).json({ error: "Name and pantryID are required." });
-  }
-
-  try {
-    await sql.query(
-      `INSERT INTO FoodItem (name, category, barcode, expiryDate, pantryID) 
-       VALUES ('${name}', '${category}', '${barcode}', '${expiryDate}', ${pantryID})`
-    );
-    res.status(201).json({ message: "Food item added successfully!" });
-  } catch (error) {
-    console.error("Error adding food item:", error);
-    res.status(500).send("Server error adding food item.");
-  }
-});
-
-// 📌 Secure Route: Fetch User Notifications (GET /api/notifications)
-app.get("/api/notifications", authenticateJWT, async (req, res) => {
-  try {
-    const result = await sql.query(
-      `SELECT * FROM Notification WHERE userID=${req.auth.userID}`
-    );
-    res.json(result.recordset);
-  } catch (error) {
-    console.error("Error fetching notifications:", error);
-    res.status(500).send("Server error fetching notifications.");
   }
 });
 
@@ -163,5 +140,5 @@ app.get("*", (req, res) => {
 
 // Start the Server
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`🚀 Server is running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
