@@ -123,7 +123,7 @@ export default function Donation() {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       {/* Top Bar */}
-      <header className="sticky top-0 z-10 bg-white border-b border-gray-200 flex items-center px-4 py-3">
+      <header className="sticky top-0 z-10 bg-white border-b border-gray-200 flex items-center px-6 py-4">
         <button onClick={handleBack} className="mr-4 text-gray-500 hover:text-gray-700">
           <svg
             className="w-6 h-6"
@@ -135,30 +135,30 @@ export default function Donation() {
             <path d="M15 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
-        <h1 className="text-lg font-semibold text-gray-800">Donation</h1>
+        <h1 className="text-2xl font-semibold text-gray-800">Donation</h1>
       </header>
 
       {/* Main Content */}
       <main
         className="
-          flex-1 overflow-y-auto pb-20 px-4 
-          w-full mx-auto 
+          flex-1 overflow-y-auto pb-24 px-6 
+          w-full mx-auto
           sm:max-w-md md:max-w-xl lg:max-w-2xl
         "
       >
-        {/* Select Items to Donate */}
-        <section className="mb-4 mt-6">
-          <h3 className="text-sm font-semibold text-gray-500 mb-2 uppercase tracking-wide">
+        {/* Select Items to Donate Section */}
+        <section className="mb-8 mt-6">
+          <h3 className="text-sm font-semibold text-gray-500 mb-3 uppercase tracking-wide">
             Select Items to Donate
           </h3>
-          <div className="bg-white rounded-lg shadow-sm p-4">
+          <div className="bg-white rounded-lg shadow-sm p-6">
             {CATEGORIES.map((cat) => (
-              <div key={cat.id} className="mb-3">
+              <div key={cat.id} className="mb-4">
                 <div
                   className="flex items-center justify-between cursor-pointer"
                   onClick={() => toggleCategory(cat.id)}
                 >
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-3">
                     {cat.icon}
                     <span className="text-gray-700 font-medium">{cat.name}</span>
                   </div>
@@ -179,7 +179,7 @@ export default function Donation() {
                     openCategories.includes(cat.id) ? "max-h-96" : "max-h-0"
                   }`}
                 >
-                  <div className="mt-2 ml-6 space-y-2">
+                  <div className="mt-3 ml-6 space-y-2">
                     {cat.items.map((item) => (
                       <div key={item.name} className="flex items-center justify-between">
                         <label className="flex items-center text-gray-700">
@@ -203,31 +203,31 @@ export default function Donation() {
           </div>
         </section>
 
-        {/* Select Food Bank Location */}
-        <section className="mb-4">
-          <h3 className="text-sm font-semibold text-gray-500 mb-2 uppercase tracking-wide">
+        {/* Select Food Bank Location Section */}
+        <section className="mb-8">
+          <h3 className="text-sm font-semibold text-gray-500 mb-3 uppercase tracking-wide">
             Select Food Bank Location
           </h3>
-          <div className="bg-white rounded-lg shadow-sm p-4">
-            <p className="text-gray-700 text-sm mb-2">
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <p className="text-gray-700 text-sm mb-4">
               Choose a food bank for your donation
             </p>
             <button
               onClick={handleLocationSelect}
-              className="w-full border border-gray-300 text-gray-600 font-medium py-2 rounded-md hover:bg-gray-100 transition-colors"
+              className="w-full border border-gray-300 text-gray-600 font-medium py-3 rounded-md hover:bg-gray-100 transition-colors"
             >
               Select Location
             </button>
           </div>
         </section>
 
-        {/* Donation Summary */}
-        <section className="mb-6">
-          <h3 className="text-sm font-semibold text-gray-500 mb-2 uppercase tracking-wide">
+        {/* Donation Summary Section */}
+        <section className="mb-8">
+          <h3 className="text-sm font-semibold text-gray-500 mb-3 uppercase tracking-wide">
             Donation Summary
           </h3>
-          <div className="bg-white rounded-lg shadow-sm p-4">
-            <div className="mb-2 text-gray-700">
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="mb-3 text-gray-700">
               Selected Items:{" "}
               <span className="font-semibold">
                 {Object.values(checkedItems).reduce((catSum, catObj) => {
@@ -241,16 +241,16 @@ export default function Donation() {
             <div className="mb-4 text-gray-700">
               Location: <span className="font-semibold">Downtown Food Bank</span>
             </div>
-            <button className="w-full bg-green-500 text-white font-medium py-2 rounded-md hover:bg-green-600 transition-colors">
+            <button className="w-full bg-green-500 text-white font-medium py-3 rounded-md hover:bg-green-600 transition-colors">
               Confirm Donation
             </button>
           </div>
         </section>
       </main>
 
-      {/* Bottom Nav */}
-      <nav className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full bg-white border-t border-gray-200">
-        <div className="max-w-md mx-auto flex justify-between px-6 py-2">
+      {/* Bottom Navigation */}
+      <nav className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full bg-white border-t border-gray-200 px-6 py-3">
+        <div className="max-w-md mx-auto flex justify-between">
           {/* Home */}
           <button
             onClick={() => navigate("/home")}
@@ -269,12 +269,12 @@ export default function Donation() {
                 strokeLinejoin="round"
               />
             </svg>
-            <span className="text-xs">Home</span>
+            <span className="text-xs font-semibold">Home</span>
           </button>
 
           {/* List */}
           <button
-            onClick={() => navigate("/list")}
+            onClick={() => navigate("/itemlist")}
             className="flex flex-col items-center text-gray-600 hover:text-blue-500"
           >
             <svg
@@ -295,7 +295,7 @@ export default function Donation() {
 
           {/* Donate */}
           <button
-            onClick={() => navigate("/donate")}
+            onClick={() => navigate("/donation")}
             className="flex flex-col items-center text-blue-500"
           >
             <svg
@@ -311,7 +311,7 @@ export default function Donation() {
                 strokeLinejoin="round"
               />
             </svg>
-            <span className="text-xs font-semibold">Donate</span>
+            <span className="text-xs">Donate</span>
           </button>
 
           {/* Profile */}

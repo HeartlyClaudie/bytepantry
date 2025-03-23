@@ -163,7 +163,7 @@ export default function Home() {
 
           {/* Donate */}
           <button
-            onClick={() => navigate("/donate")}
+            onClick={() => navigate("/donation")}
             className="flex flex-col items-center text-gray-600 hover:text-blue-500"
           >
             <svg

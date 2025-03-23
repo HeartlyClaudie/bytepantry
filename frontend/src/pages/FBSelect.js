@@ -12,7 +12,7 @@ export default function FBSelect() {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       {/* Top Bar */}
-      <header className="sticky top-0 z-10 bg-white border-b border-gray-200 flex items-center px-4 py-3">
+      <header className="sticky top-0 z-10 bg-white border-b border-gray-200 flex items-center px-6 py-4">
         <button onClick={handleBack} className="mr-4 text-gray-500 hover:text-gray-700">
           {/* Back Arrow Icon */}
           <svg
@@ -25,66 +25,67 @@ export default function FBSelect() {
             <path d="M15 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
-        <h1 className="text-lg font-semibold text-gray-800">Select Food Bank</h1>
+        <h1 className="text-2xl font-semibold text-gray-800">Select Food Bank</h1>
       </header>
 
-      {/* Main Content with Responsive Container */}
+      {/* Main Content */}
       <main
         className="
-          flex-1 overflow-y-auto pb-20 px-4 w-full mx-auto
+          flex-1 overflow-y-auto pb-24 px-6 py-6 
+          w-full mx-auto 
           sm:max-w-md md:max-w-xl lg:max-w-2xl
         "
       >
         {/* Map Placeholder */}
-        <div className="bg-gray-300 h-48 rounded-md flex items-center justify-center mb-4">
-          <span className="text-gray-600">Interactive Map View</span>
+        <div className="bg-gray-300 h-48 rounded-md flex items-center justify-center mb-8">
+          <span className="text-gray-600 text-lg">Interactive Map View</span>
         </div>
 
         {/* Tag Pills */}
-        <div className="flex space-x-2 mb-4">
-          <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-sm">
+        <div className="flex space-x-3 mb-8">
+          <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded text-sm">
             24/7 Drop-off
           </span>
-          <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-sm">
+          <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded text-sm">
             Accepts Perishable
           </span>
-          <span className="px-2 py-1 bg-green-100 text-green-600 rounded text-sm">
+          <span className="px-3 py-1 bg-green-100 text-green-600 rounded text-sm">
             Open
           </span>
         </div>
 
         {/* Food Bank Listings */}
-        <div className="space-y-4">
+        <div className="space-y-6">
           {/* Food Bank Card */}
-          <div className="bg-white rounded-lg shadow-sm p-4">
-            <div className="flex items-center justify-between mb-1">
-              <h2 className="text-gray-800 font-semibold">Community Food Bank</h2>
-              <span className="text-sm bg-green-100 text-green-600 px-2 py-1 rounded">
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-xl font-semibold text-gray-800">Community Food Bank</h2>
+              <span className="text-sm bg-green-100 text-green-600 px-3 py-1 rounded">
                 Open
               </span>
             </div>
-            <p className="text-sm text-gray-500 mb-2">
+            <p className="text-sm text-gray-500 mb-4">
               0.8 miles away<br />
               123 Main St, City
             </p>
-            <button className="bg-green-500 text-white font-medium py-2 w-full rounded hover:bg-green-600 transition-colors">
+            <button className="w-full bg-green-500 text-white font-medium py-3 rounded-md hover:bg-green-600 transition-colors">
               Contact
             </button>
           </div>
 
           {/* Another Food Bank Card */}
-          <div className="bg-white rounded-lg shadow-sm p-4">
-            <div className="flex items-center justify-between mb-1">
-              <h2 className="text-gray-800 font-semibold">Hope Food Pantry</h2>
-              <span className="text-sm bg-gray-200 text-gray-600 px-2 py-1 rounded">
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-xl font-semibold text-gray-800">Hope Food Pantry</h2>
+              <span className="text-sm bg-gray-200 text-gray-600 px-3 py-1 rounded">
                 Closed
               </span>
             </div>
-            <p className="text-sm text-gray-500 mb-2">
+            <p className="text-sm text-gray-500 mb-4">
               1.2 miles away<br />
               456 Oak Ave, City
             </p>
-            <button className="bg-green-500 text-white font-medium py-2 w-full rounded hover:bg-green-600 transition-colors">
+            <button className="w-full bg-green-500 text-white font-medium py-3 rounded-md hover:bg-green-600 transition-colors">
               Contact
             </button>
           </div>
@@ -92,8 +93,8 @@ export default function FBSelect() {
       </main>
 
       {/* Bottom Nav */}
-      <nav className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full bg-white border-t border-gray-200">
-        <div className="max-w-md mx-auto flex justify-between px-6 py-2">
+      <nav className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full bg-white border-t border-gray-200 px-6 py-3">
+        <div className="max-w-md mx-auto flex justify-between">
           {/* Home */}
           <button
             onClick={() => navigate("/home")}
@@ -112,12 +113,12 @@ export default function FBSelect() {
                 strokeLinejoin="round"
               />
             </svg>
-            <span className="text-xs">Home</span>
+            <span className="text-xs font-semibold">Home</span>
           </button>
 
           {/* List */}
           <button
-            onClick={() => navigate("/list")}
+            onClick={() => navigate("/itemlist")}
             className="flex flex-col items-center text-gray-600 hover:text-blue-500"
           >
             <svg
@@ -138,8 +139,8 @@ export default function FBSelect() {
 
           {/* Donate */}
           <button
-            onClick={() => navigate("/donate")}
-            className="flex flex-col items-center text-gray-600 hover:text-blue-500"
+            onClick={() => navigate("/donation")}
+            className="flex flex-col items-center text-blue-500"
           >
             <svg
               className="w-6 h-6 mb-1"
@@ -154,7 +155,7 @@ export default function FBSelect() {
                 strokeLinejoin="round"
               />
             </svg>
-            <span className="text-xs font-semibold">Donate</span>
+            <span className="text-xs">Donate</span>
           </button>
 
           {/* Profile */}
