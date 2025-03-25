@@ -24,8 +24,120 @@ export default function NewItem() {
   };
 
   const handleScanBarcode = () => {
-    alert("Scan Barcode clicked!");
+    const [isScanning, setIsScanning] = useState(false);
+    const [barcode, setBarcode] = useState("None");
+    const [itemName, setItemName] = useState("");
+    const videoRef = useRef(null);
+    const scannerContainerRef = useRef(null);
+    let mediaStream = null;
+    let lastScanned = "";
+  
+    const startCamera = async () => {
+      try {
+        mediaStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment" },
+        });
+  
+        if (videoRef.current) {
+          videoRef.current.srcObject = mediaStream;
+          scannerContainerRef.current.style.display = "block";
+        }
+  
+        setIsScanning(true);
+        startBarcodeScanner();
+      } catch (error) {
+        console.error("Camera access error:", error);
+        alert("Please allow camera access.");
+      }
+    };
+  
+    const stopCamera = () => {
+      if (mediaStream) {
+        mediaStream.getTracks().forEach((track) => track.stop());
+      }
+      Quagga.stop();
+      if (scannerContainerRef.current) scannerContainerRef.current.style.display = "none";
+      setIsScanning(false);
+    };
+  
+    const startBarcodeScanner = () => {
+      Quagga.init(
+        {
+          inputStream: {
+            type: "LiveStream",
+            target: videoRef.current,
+          },
+          decoder: { readers: ["ean_reader", "upc_reader"] },
+          locate: true,
+        },
+        (err) => {
+          if (!err) {
+            Quagga.start();
+          } else {
+            console.error("QuaggaJS error:", err);
+          }
+        }
+      );
+  
+      Quagga.onDetected(async (result) => {
+        let scannedBarcode = result.codeResult.code;
+        if (scannedBarcode === lastScanned) return;
+        lastScanned = scannedBarcode;
+        setBarcode(scannedBarcode);
+        setItemName("Loading...");
+  
+        try {
+          let response = await fetch(
+            `https://world.openfoodfacts.org/api/v0/product/${scannedBarcode}.json`
+          );
+          let data = await response.json();
+  
+          if (response.ok && data.status === 1) {
+            setItemName(data.product.product_name || "Unknown Product");
+          } else {
+            setItemName("Product Not Found");
+          }
+        } catch (error) {
+          console.error("API Error:", error);
+          setItemName("API Error");
+        }
+  
+        setTimeout(() => {
+          lastScanned = "";
+        }, 3000);
+      });
+    };
+  
+    return (
+      <div className="text-center">
+        <h2>Scan a Barcode</h2>
+        <button onClick={isScanning ? stopCamera : startCamera}>
+          {isScanning ? "Stop Scanning" : "Start Scanning"}
+        </button>
+  
+        <div
+          ref={scannerContainerRef}
+          className="relative w-full max-w-md h-96 mx-auto overflow-hidden border-4 border-gray-800 rounded-lg bg-black hidden"
+        >
+          <video ref={videoRef} autoPlay className="w-full h-full object-cover"></video>
+        </div>
+  
+        <p className="info">
+          Scanned Barcode: <strong>{barcode}</strong>
+        </p>
+        <p className="info">Item Name:</p>
+        <input
+          type="text"
+          value={itemName}
+          placeholder="Product name will appear here..."
+          readOnly
+          className="w-80 p-2 text-lg border rounded-md"
+        />
+      </div>
+    );
   };
+  
+  
 
   const handleAddItem = () => {
     alert("Item added to inventory!");
@@ -53,8 +165,9 @@ export default function NewItem() {
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto px-6 py-6 w-full mx-auto sm:max-w-md md:max-w-xl lg:max-w-2xl">
         {/* Barcode Placeholder */}
-        <div className="bg-gray-100 h-40 rounded-md flex items-center justify-center mb-6">
-          <span className="text-gray-500">[ Barcode Placeholder ]</span>
+        <div className="relative w-full max-w-md h-96 mx-auto overflow-hidden border-4 border-gray-800 rounded-lg bg-black hidden" id="scanner-container">
+          <video id="scanner" autoPlay className="w-full h-full object-cover"></video>
+          <div id="barcode-overlay" className="absolute border-4 border-red-500 hidden"></div>
         </div>
 
         {/* Scan Barcode Button */}
