@@ -2,6 +2,8 @@ import React from "react";
 import { useMsal } from "@azure/msal-react";
 import { loginRequest, passwordResetRequest } from "../authConfig";
 
+console.log("Here we goooo Login!!!!"); // remove later
+
 export default function Login() {
   const { instance } = useMsal();
 

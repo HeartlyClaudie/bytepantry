@@ -1,24 +1,71 @@
-import React from "react";
+// Profile.js
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { getUserProfile, updateUserProfile } from "../api";
 
 export default function Profile() {
   const navigate = useNavigate();
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
 
-  // Mock user data
-  const user = {
-    name: "Claude",
-    accountType: "Personal Account",
-    fullName: "Claude E.",
-    email: "claude@gmail.com",
-    subscriptionPlan: "Pro Plan",
-    subscriptionStatus: "Active",
-    nextBillingDate: "March 15, 2025",
-  };
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const userID = sessionStorage.getItem("userID");
+        if (!userID) throw new Error("Missing userID in sessionStorage");
 
-  // Go back to previous page
+        const data = await getUserProfile(userID);
+        setUser(data);
+      } catch (err) {
+        console.error("Failed to fetch profile", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
   const handleBack = () => {
     navigate(-1);
   };
+
+  const handleToggle = (key) => {
+    setUser((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const handleUpdate = async () => {
+    try {
+      setUpdating(true);
+      const userID = sessionStorage.getItem("userID");
+      await updateUserProfile({
+        userID: parseInt(userID),
+        name: user.name,
+        pushNotif: user.pushNotif,
+        emailUpdates: user.emailUpdates,
+      });      
+      alert("Profile updated successfully.");
+    } catch (error) {
+      alert("Failed to update profile.");
+      console.error("Update error:", error);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  if (loading || !user) {
+    return (
+      <div className="flex flex-col min-h-screen bg-gray-50">
+        <header className="sticky top-0 z-10 bg-white border-b border-gray-200 flex items-center px-6 py-4">
+          <h1 className="text-2xl font-semibold text-gray-800">Loading...</h1>
+        </header>
+        <main className="flex-1 overflow-y-auto px-6 py-6 text-center text-gray-500">
+          Loading profile information...
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -46,13 +93,7 @@ export default function Profile() {
       </header>
 
       {/* Main Content */}
-      <main
-        className="
-          flex-1 overflow-y-auto pb-24 px-6 
-          w-full mx-auto
-          sm:max-w-md md:max-w-xl lg:max-w-2xl
-        "
-      >
+      <main className="flex-1 overflow-y-auto pb-24 px-6 w-full mx-auto sm:max-w-md md:max-w-xl lg:max-w-2xl">
         {/* User Header */}
         <section className="bg-white rounded-lg shadow-sm p-6 mt-6 mb-8">
           <div className="flex items-center">
@@ -63,7 +104,7 @@ export default function Profile() {
             </div>
             <div>
               <h2 className="text-2xl font-semibold text-gray-800">{user.name}</h2>
-              <p className="text-sm text-gray-500">{user.accountType}</p>
+              <p className="text-sm text-gray-500">Personal Account</p>
             </div>
           </div>
         </section>
@@ -80,8 +121,8 @@ export default function Profile() {
               </label>
               <input
                 type="text"
-                value={user.fullName}
-                readOnly
+                value={user.name}
+                onChange={(e) => setUser({ ...user, name: e.target.value })}
                 className="w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
@@ -108,59 +149,38 @@ export default function Profile() {
             <div className="flex items-center justify-between py-3">
               <span className="text-gray-700">Push Notifications</span>
               <label className="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" className="sr-only peer" defaultChecked />
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={user.pushNotif}
+                  onChange={() => handleToggle("pushNotif")}
+                />
                 <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-blue-500 peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all" />
               </label>
             </div>
             <div className="flex items-center justify-between py-3">
               <span className="text-gray-700">Email Updates</span>
               <label className="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" className="sr-only peer" />
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={user.emailUpdates}
+                  onChange={() => handleToggle("emailUpdates")}
+                />
                 <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-blue-500 peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all" />
               </label>
             </div>
           </div>
-        </section>
 
-        {/* Subscription */}
-        <section className="mb-8">
-          <h3 className="text-sm font-semibold text-gray-500 mb-3 uppercase tracking-wide">
-            Subscription
-          </h3>
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-gray-700 font-semibold">{user.subscriptionPlan}</span>
-              <span className="inline-block bg-gray-100 text-gray-600 text-sm font-medium px-3 py-1 rounded">
-                {user.subscriptionStatus}
-              </span>
-            </div>
-            <p className="text-sm text-gray-600 mb-4">
-              Next billing date: {user.nextBillingDate}
-            </p>
-            <div className="flex">
-              <button className="mx-auto w-3/4 border border-gray-300 text-gray-600 font-medium py-3 rounded-md hover:bg-gray-100 transition-colors">
-                Manage Subscription
-              </button>
-            </div>
-          </div>
-        </section>
-
-        {/* Appearance */}
-        <section className="mb-8">
-          <h3 className="text-sm font-semibold text-gray-500 mb-3 uppercase tracking-wide">
-            Appearance
-          </h3>
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <div className="flex items-center justify-between">
-              <span className="text-gray-700">Dark Mode</span>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" className="sr-only peer" />
-                <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-blue-500 peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all" />
-              </label>
-            </div>
-            <p className="text-gray-500 text-sm mt-3">
-              Switch between light and dark theme
-            </p>
+          {/* Update Button */}
+          <div className="mt-6 text-center">
+            <button
+              onClick={handleUpdate}
+              className="w-full sm:w-1/2 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 rounded-md transition-colors"
+              disabled={updating}
+            >
+              {updating ? "Updating..." : "Update"}
+            </button>
           </div>
         </section>
       </main>
@@ -168,7 +188,6 @@ export default function Profile() {
       {/* Bottom Nav */}
       <nav className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full bg-white border-t border-gray-200 px-6 py-3">
         <div className="max-w-md mx-auto flex justify-between">
-          {/* Home */}
           <button
             onClick={() => navigate("/home")}
             className="flex flex-col items-center text-gray-600 hover:text-blue-500"
@@ -189,7 +208,6 @@ export default function Profile() {
             <span className="text-xs font-semibold">Home</span>
           </button>
 
-          {/* List */}
           <button
             onClick={() => navigate("/itemlist")}
             className="flex flex-col items-center text-gray-600 hover:text-blue-500"
@@ -210,7 +228,6 @@ export default function Profile() {
             <span className="text-xs">List</span>
           </button>
 
-          {/* Donate */}
           <button
             onClick={() => navigate("/donation")}
             className="flex flex-col items-center text-gray-600 hover:text-blue-500"
@@ -231,7 +248,6 @@ export default function Profile() {
             <span className="text-xs">Donate</span>
           </button>
 
-          {/* Profile */}
           <button
             onClick={() => navigate("/profile")}
             className="flex flex-col items-center text-blue-500"

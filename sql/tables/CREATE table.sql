@@ -3,7 +3,6 @@ CREATE OR ALTER TABLE Users (
     userID INT IDENTITY(1,1) PRIMARY KEY,
     name NVARCHAR(255) NOT NULL,
     email NVARCHAR(255) UNIQUE NOT NULL,
-    password NVARCHAR(255) NOT NULL,  -- Encrypted password
     notificationPreferences NVARCHAR(255) DEFAULT 'ALL', -- User preferences for alerts
     created_at DATETIME DEFAULT GETDATE()
 );

@@ -1,5 +1,12 @@
+// App.js
 import React, { useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+  useNavigate
+} from "react-router-dom";
 import Home from "./pages/Home";
 import NewItem from "./pages/NewItem";
 import Login from "./pages/Login";
@@ -11,50 +18,79 @@ import ItemList from "./pages/ItemList";
 import { useMsal } from "@azure/msal-react";
 import { InteractionStatus } from "@azure/msal-browser";
 import axios from "axios";
+import { attachTokenInterceptor } from "./api";
 
 const ProtectedRoute = ({ element }) => {
   const { accounts, inProgress } = useMsal();
 
-  // If authentication is in progress, wait
-  if (inProgress === InteractionStatus.Startup || inProgress === InteractionStatus.HandleRedirect) {
-    return <div>Loading...</div>; // Show a loading screen while handling login
+  if (
+    inProgress === InteractionStatus.Startup ||
+    inProgress === InteractionStatus.HandleRedirect
+  ) {
+    return <div>Loading...</div>;
   }
 
-  // Redirect to login if not authenticated
   return accounts.length > 0 ? element : <Navigate to="/login" />;
 };
 
+console.log("Here we goooo App!!!!"); // remove later
+
 const LoginRedirectHandler = () => {
-  const { accounts } = useMsal();
+  const { accounts, instance } = useMsal();
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUserID = async () => {
-      if (accounts.length > 0) {
-        const user = accounts[0];
-        try {
-          const response = await axios.post(
-            "https://bytepantry-api-hjbkd7hxfbasg7h8.canadacentral-01.azurewebsites.net/auth/b2c-login",
-            { email: user.username, name: user.name }
-          );
-
-          if (response.data.userID) {
-            localStorage.setItem("userID", response.data.userID);
-            navigate("/home"); // Redirect user to home page after login
-          }
-        } catch (error) {
-          console.error("❌ Error retrieving userID:", error);
+      try {
+        if (accounts.length === 0) {
+          console.warn("⚠️ No account returned from MSAL after redirect.");
+          return;
         }
+
+        const user = accounts[0];
+        console.log("🟢 [MSAL] Logged in: ", user);
+
+        const payload = {
+          email: user.username,
+          name: user.name || user.username
+        };
+
+        console.log("📤 [Frontend] Sending payload to /auth/b2c-login: ", payload);
+
+        const response = await axios.post(
+          "https://bytepantry-api-hjbkd7hxfbasg7h8.canadacentral-01.azurewebsites.net/auth/b2c-login",
+          payload
+        );
+
+        if (response.data.userID) {
+          sessionStorage.setItem("userID", response.data.userID);
+          console.log("✅ [Frontend] UserID stored:", response.data.userID);
+          navigate("/home");
+        }
+      } catch (error) {
+        console.error("❌ [Frontend] Failed to POST to /auth/b2c-login:", error);
       }
     };
 
     fetchUserID();
   }, [accounts, navigate]);
 
-  return <div>Redirecting...</div>; // Temporary UI while redirecting
+  return <div>Redirecting...</div>;
 };
 
 const App = () => {
+  const { accounts, instance } = useMsal();
+  console.log("MSAL account info:", accounts[0]);
+  console.log("MSAL account info - accounts:", accounts);
+
+  useEffect(() => {
+    if (accounts.length > 0 && instance && !window._interceptorAttached) {
+      console.log("🔐 Attaching MSAL token interceptor...");
+      attachTokenInterceptor(instance, accounts[0]);
+      window._interceptorAttached = true;
+    }
+  }, [accounts, instance]);
+
   return (
     <Router>
       <Routes>
