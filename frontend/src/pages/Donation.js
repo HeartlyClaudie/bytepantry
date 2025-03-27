@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 // Example data structure for categories & items
 const CATEGORIES = [
@@ -76,6 +76,9 @@ const CATEGORIES = [
 
 export default function Donation() {
   const navigate = useNavigate();
+  const location = useLocation();
+  // Retrieve the selected food bank name from FBSelect (if any)
+  const selectedFoodbank = location.state?.selectedFoodbank || "";
 
   // Which categories are currently open (allowing multiple open)
   const [openCategories, setOpenCategories] = useState([]);
@@ -210,7 +213,9 @@ export default function Donation() {
           </h3>
           <div className="bg-white rounded-lg shadow-sm p-6">
             <p className="text-gray-700 text-sm mb-4">
-              Choose a food bank for your donation
+              {selectedFoodbank
+                ? `Selected Food Bank: ${selectedFoodbank}`
+                : "No food bank selected."}
             </p>
             <button
               onClick={handleLocationSelect}
@@ -239,7 +244,10 @@ export default function Donation() {
               </span>
             </div>
             <div className="mb-4 text-gray-700">
-              Location: <span className="font-semibold">Downtown Food Bank</span>
+              Location:{" "}
+              <span className="font-semibold">
+                {selectedFoodbank || "None"}
+              </span>
             </div>
             <button className="w-full bg-green-500 text-white font-medium py-3 rounded-md hover:bg-green-600 transition-colors">
               Confirm Donation

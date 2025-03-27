@@ -1,8 +1,26 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import MapView from "../components/MapView"; // Your map component
 
 export default function FBSelect() {
   const navigate = useNavigate();
+
+  // Default center for the map (choose one as default)
+  const defaultCenter = { lat: 43.660, lng: -79.414 };
+
+  // State to hold the current map center
+  const [mapCenter, setMapCenter] = useState(defaultCenter);
+
+  // Update map center when a food bank is located
+  const handleLocate = (newCenter) => {
+    setMapCenter(newCenter);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // When a food bank is chosen, navigate to the Donations page and pass the selection via state
+  const handleChoose = (foodBank) => {
+    navigate("/donation", { state: { selectedFoodbank: foodBank } });
+  };
 
   // Go back to previous page
   const handleBack = () => {
@@ -14,7 +32,6 @@ export default function FBSelect() {
       {/* Top Bar */}
       <header className="sticky top-0 z-10 bg-white border-b border-gray-200 flex items-center px-6 py-4">
         <button onClick={handleBack} className="mr-4 text-gray-500 hover:text-gray-700">
-          {/* Back Arrow Icon */}
           <svg
             className="w-6 h-6"
             fill="none"
@@ -29,68 +46,95 @@ export default function FBSelect() {
       </header>
 
       {/* Main Content */}
-      <main
-        className="
-          flex-1 overflow-y-auto pb-24 px-6 py-6 
-          w-full mx-auto 
-          sm:max-w-md md:max-w-xl lg:max-w-2xl
-        "
-      >
-        {/* Map Placeholder */}
-        <div className="bg-gray-300 h-48 rounded-md flex items-center justify-center mb-8">
-          <span className="text-gray-600 text-lg">Interactive Map View</span>
+      <main className="flex-1 overflow-y-auto pb-24 px-6 py-6 w-full mx-auto sm:max-w-md md:max-w-xl lg:max-w-2xl">
+        {/* Map View */}
+        <div className="h-64 rounded-md overflow-hidden mb-8">
+          <MapView center={mapCenter} />
         </div>
 
         {/* Tag Pills */}
         <div className="flex space-x-3 mb-8">
-          <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded text-sm">
-            24/7 Drop-off
-          </span>
-          <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded text-sm">
-            Accepts Perishable
-          </span>
-          <span className="px-3 py-1 bg-green-100 text-green-600 rounded text-sm">
-            Open
-          </span>
+          <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded text-sm">24/7 Drop-off</span>
+          <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded text-sm">Accepts Perishable</span>
+          <span className="px-3 py-1 bg-green-100 text-green-600 rounded text-sm">Open</span>
         </div>
 
         {/* Food Bank Listings */}
         <div className="space-y-6">
-          {/* Food Bank Card */}
+          {/* Church on a Hill Food Bank */}
           <div className="bg-white rounded-lg shadow-sm p-6">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-xl font-semibold text-gray-800">Community Food Bank</h2>
-              <span className="text-sm bg-green-100 text-green-600 px-3 py-1 rounded">
-                Open
-              </span>
+              <h2 className="text-xl font-semibold text-gray-800">Church on a Hill Food Bank</h2>
+              <span className="text-sm bg-green-100 text-green-600 px-3 py-1 rounded">Open</span>
             </div>
             <p className="text-sm text-gray-500 mb-4">
-              0.8 miles away<br />
-              123 Main St, City
+              230 St Clair Ave W<br />
+              Toronto, ON M4V 1R5
             </p>
-            <button className="w-full bg-green-500 text-white font-medium py-3 rounded-md hover:bg-green-600 transition-colors">
-              Contact
+            <button
+              onClick={() => handleLocate({ lat: 43.686319, lng: -79.406151 })}
+              className="w-full bg-green-500 text-white font-medium py-3 rounded-md hover:bg-green-600 transition-colors mb-3"
+            >
+              Locate
+            </button>
+            <button
+              onClick={() => handleChoose("Church on a Hill Food Bank")}
+              className="w-full bg-blue-500 text-white font-medium py-3 rounded-md hover:bg-blue-600 transition-colors"
+            >
+              Choose This Foodbank
             </button>
           </div>
 
-          {/* Another Food Bank Card */}
+          {/* Wychwood Open Door */}
           <div className="bg-white rounded-lg shadow-sm p-6">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-xl font-semibold text-gray-800">Hope Food Pantry</h2>
-              <span className="text-sm bg-gray-200 text-gray-600 px-3 py-1 rounded">
-                Closed
-              </span>
+              <h2 className="text-xl font-semibold text-gray-800">Wychwood Open Door</h2>
+              <span className="text-sm bg-green-100 text-green-600 px-3 py-1 rounded">Open</span>
             </div>
             <p className="text-sm text-gray-500 mb-4">
-              1.2 miles away<br />
-              456 Oak Ave, City
+              729 St Clair Ave W<br />
+              Toronto, ON M6G 3J4
             </p>
-            <button className="w-full bg-green-500 text-white font-medium py-3 rounded-md hover:bg-green-600 transition-colors">
-              Contact
+            <button
+              onClick={() => handleLocate({ lat: 43.681288, lng: -79.427258 })}
+              className="w-full bg-green-500 text-white font-medium py-3 rounded-md hover:bg-green-600 transition-colors mb-3"
+            >
+              Locate
+            </button>
+            <button
+              onClick={() => handleChoose("Wychwood Open Door")}
+              className="w-full bg-blue-500 text-white font-medium py-3 rounded-md hover:bg-blue-600 transition-colors"
+            >
+              Choose This Foodbank
+            </button>
+          </div>
+
+          {/* Hillcrest Community Food Bank */}
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-xl font-semibold text-gray-800">Hillcrest Community Food Bank</h2>
+              <span className="text-sm bg-green-100 text-green-600 px-3 py-1 rounded">Open</span>
+            </div>
+            <p className="text-sm text-gray-500 mb-4">
+              2 Vaughan Rd<br />
+              Toronto, ON M6G 2N1
+            </p>
+            <button
+              onClick={() => handleLocate({ lat: 43.680994, lng: -79.417969 })}
+              className="w-full bg-green-500 text-white font-medium py-3 rounded-md hover:bg-green-600 transition-colors mb-3"
+            >
+              Locate
+            </button>
+            <button
+              onClick={() => handleChoose("Hillcrest Community Food Bank")}
+              className="w-full bg-blue-500 text-white font-medium py-3 rounded-md hover:bg-blue-600 transition-colors"
+            >
+              Choose This Foodbank
             </button>
           </div>
         </div>
       </main>
+
 
       {/* Bottom Nav */}
       <nav className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full bg-white border-t border-gray-200 px-6 py-3">
