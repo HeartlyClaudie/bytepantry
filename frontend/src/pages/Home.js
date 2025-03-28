@@ -9,9 +9,6 @@ export default function Home() {
   const [userName, setUserName] = useState("");
   const [items, setItems] = useState([]);
 
-  // Temporary dummy items
-  const items = []; // ✅ Replace with real pantry items later
-
   // Dummy helper to prevent build error
   const getStatusClasses = (status) => {
     switch (status) {
