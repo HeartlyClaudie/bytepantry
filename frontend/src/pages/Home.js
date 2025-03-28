@@ -9,6 +9,21 @@ export default function Home() {
   const [userName, setUserName] = useState("");
   const [items, setItems] = useState([]);
 
+  // Temporary dummy items
+  const items = []; // ✅ Replace with real pantry items later
+
+  // Dummy helper to prevent build error
+  const getStatusClasses = (status) => {
+    switch (status) {
+      case "Expired":
+        return "bg-red-100 text-red-700";
+      case "Fresh":
+        return "bg-green-100 text-green-700";
+      default:
+        return "bg-gray-100 text-gray-700";
+    }
+  };
+
   useEffect(() => {
     if (accounts.length > 0) {
       const name = accounts[0].name || "User";

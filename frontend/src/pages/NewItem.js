@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { addPantryItem } from "../api";
+import Quagga from "quagga"; // Barcode scanner library
 
 export default function NewItem() {
   const navigate = useNavigate();
@@ -9,6 +10,11 @@ export default function NewItem() {
   const [category, setCategory] = useState("");
   const [expiryDate, setExpiryDate] = useState("");
   const [quantity, setQuantity] = useState(1);
+  const [isScanning, setIsScanning] = useState(false);
+  const videoRef = useRef(null);
+  const scannerContainerRef = useRef(null);
+  let mediaStream = null;
+  let lastScanned = "";
 
   const handleMinus = () => {
     if (quantity > 1) setQuantity(quantity - 1);
@@ -22,8 +28,76 @@ export default function NewItem() {
     navigate(-1);
   };
 
-  const handleScanBarcode = () => {
-    alert("Scan Barcode clicked!");
+  // Fetch food name using an API call
+  const fetchFoodNameFromBarcode = async (barcode) => {
+    try {
+      const response = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
+      const data = await response.json();
+      if (data.product && data.product.product_name) {
+        setFoodName(data.product.product_name);
+      } else {
+        setFoodName("Unknown Product");
+      }
+    } catch (error) {
+      console.error("Error fetching product:", error);
+      setFoodName("Error fetching product");
+    }
+  };
+
+  // Barcode scanning logic
+  const startCamera = async () => {
+    try {
+      mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" },
+      });
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream;
+        scannerContainerRef.current.style.display = "block";
+      }
+
+      setIsScanning(true);
+      startBarcodeScanner();
+    } catch (error) {
+      console.error("Camera access error:", error);
+      alert("Please allow camera access.");
+    }
+  };
+
+  const stopCamera = () => {
+    if (mediaStream) {
+      mediaStream.getTracks().forEach((track) => track.stop());
+    }
+    Quagga.stop();
+    if (scannerContainerRef.current) scannerContainerRef.current.style.display = "none";
+    setIsScanning(false);
+  };
+
+  const startBarcodeScanner = () => {
+    Quagga.init(
+      {
+        inputStream: {
+          type: "LiveStream",
+          target: videoRef.current,
+        },
+        decoder: { readers: ["ean_reader", "upc_reader"] },
+        locate: true,
+      },
+      (err) => {
+        if (!err) {
+          Quagga.start();
+        } else {
+          console.error("QuaggaJS error:", err);
+        }
+      }
+    );
+
+    Quagga.onDetected(async (result) => {
+      let scannedBarcode = result.codeResult.code;
+      if (scannedBarcode === lastScanned) return;
+      lastScanned = scannedBarcode;
+      fetchFoodNameFromBarcode(scannedBarcode);
+    });
   };
 
   const handleAddItem = async () => {
@@ -64,23 +138,16 @@ export default function NewItem() {
       </header>
 
       <main className="flex-1 overflow-y-auto px-6 py-6 w-full mx-auto sm:max-w-md md:max-w-xl lg:max-w-2xl">
-        <div className="bg-gray-100 h-40 rounded-md flex items-center justify-center mb-6">
-          <span className="text-gray-500">[ Barcode Placeholder ]</span>
+        <div ref={scannerContainerRef} className="relative w-full max-w-md h-96 mx-auto overflow-hidden border-4 border-gray-800 rounded-lg bg-black hidden">
+          <video ref={videoRef} autoPlay className="w-full h-full object-cover"></video>
         </div>
 
-        <button
-          onClick={handleScanBarcode}
-          className="w-full flex items-center justify-center bg-green-500 text-white py-3 rounded-md hover:bg-green-600 transition-colors mb-6"
-        >
-          Scan Barcode
+        <button onClick={isScanning ? stopCamera : startCamera} className="w-full flex items-center justify-center bg-green-500 text-white py-3 rounded-md hover:bg-green-600 transition-colors mb-6">
+          {isScanning ? "Stop Scanning" : "Start Scanning"}
         </button>
 
-        <div className="flex justify-center mb-6">
-          <div className="bg-gray-200 rounded-full px-4 py-2 text-gray-600 text-sm">
-            or add manually
-          </div>
-        </div>
 
+        {/* Add Food Form */}
         <div className="mb-6">
           <label className="block text-gray-700 font-medium mb-2">Food Name</label>
           <input
@@ -117,40 +184,116 @@ export default function NewItem() {
           />
         </div>
 
+        {/* Quantity */}
+
         <div className="mb-6">
           <label className="block text-gray-700 font-medium mb-2">Quantity</label>
           <div className="flex items-center border border-gray-300 rounded-md">
-            <button
-              onClick={handleMinus}
-              className="w-12 h-12 text-gray-700 hover:bg-gray-100 flex items-center justify-center"
-            >
-              -
-            </button>
+            <button onClick={handleMinus} className="w-12 h-12 text-gray-700 hover:bg-gray-100 flex items-center justify-center">-</button>
             <input
               type="number"
-              min="1"
               value={quantity}
               onChange={(e) => setQuantity(Number(e.target.value))}
               className="w-full text-center border-l border-r border-gray-300 py-2 focus:outline-none"
             />
-            <button
-              onClick={handlePlus}
-              className="w-12 h-12 text-gray-700 hover:bg-gray-100 flex items-center justify-center"
-            >
-              +
-            </button>
+            <button onClick={handlePlus} className="w-12 h-12 text-gray-700 hover:bg-gray-100 flex items-center justify-center">+</button>
           </div>
         </div>
 
-        <hr className="border-t border-gray-300 mb-6" />
-
-        <button
-          onClick={handleAddItem}
-          className="w-full bg-green-500 text-white font-medium py-3 rounded-md hover:bg-green-600 transition-colors"
-        >
+        {/* Add Item Button */}
+        <button onClick={handleAddItem} className="w-full bg-green-500 text-white font-medium py-3 rounded-md hover:bg-green-600 transition-colors">
           Add to Inventory
         </button>
       </main>
+
+      {/* Footer */}
+      <nav className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full bg-white border-t border-gray-200 px-6 py-3">
+        <div className="max-w-md mx-auto flex justify-between">
+          {/* Home */}
+          <button
+            onClick={() => navigate("/home")}
+            className="flex flex-col items-center text-gray-600 hover:text-blue-500"
+          >
+            <svg
+              className="w-6 h-6 mb-1"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                d="M3 12l2-2m0 0l7-7 7 7m-9 2v6m0 0H5a2 2 0 01-2-2v-4m6 6h4m2 0h2a2 2 0 002-2v-4m0 0l-2-2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <span className="text-xs font-semibold">Home</span>
+          </button>
+
+          {/* List */}
+          <button
+            onClick={() => navigate("/itemlist")}
+            className="flex flex-col items-center text-blue-500"
+          >
+            <svg
+              className="w-6 h-6 mb-1"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                d="M3 7h18M3 12h18M3 17h18"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <span className="text-xs">List</span>
+          </button>
+
+          {/* Donate */}
+          <button
+            onClick={() => navigate("/donation")}
+            className="flex flex-col items-center text-gray-600 hover:text-blue-500"
+          >
+            <svg
+              className="w-6 h-6 mb-1"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                d="M14 2a2 2 0 012 2v6H8V4a2 2 0 012-2h4zM8 10v10a2 2 0 002 2h4a2 2 0 002-2V10"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <span className="text-xs">Donate</span>
+          </button>
+
+          {/* Profile */}
+          <button
+            onClick={() => navigate("/profile")}
+            className="flex flex-col items-center text-gray-600 hover:text-blue-500"
+          >
+            <svg
+              className="w-6 h-6 mb-1"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                d="M5.121 17.804A4 4 0 019 16h6a4 4 0 013.879 1.804M12 11a4 4 0 100-8 4 4 0 000 8z"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <span className="text-xs">Profile</span>
+          </button>
+        </div>
+      </nav>
     </div>
   );
 }
