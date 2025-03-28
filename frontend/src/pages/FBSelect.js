@@ -18,8 +18,9 @@ export default function FBSelect() {
   };
 
   // When a food bank is chosen, navigate to the Donations page and pass the selection via state
-  const handleChoose = (foodBank) => {
-    navigate("/donation", { state: { selectedFoodbank: foodBank } });
+  // We now pass an object that includes centerID and name
+  const handleChoose = (foodBankObj) => {
+    navigate("/donation", { state: { selectedFoodbank: foodBankObj } });
   };
 
   // Go back to previous page
@@ -78,7 +79,12 @@ export default function FBSelect() {
               Locate
             </button>
             <button
-              onClick={() => handleChoose("Church on a Hill Food Bank")}
+              onClick={() =>
+                handleChoose({
+                  centerID: 1,
+                  name: "Church on a Hill Food Bank",
+                })
+              }
               className="w-full bg-blue-500 text-white font-medium py-3 rounded-md hover:bg-blue-600 transition-colors"
             >
               Choose This Foodbank
@@ -102,7 +108,12 @@ export default function FBSelect() {
               Locate
             </button>
             <button
-              onClick={() => handleChoose("Wychwood Open Door")}
+              onClick={() =>
+                handleChoose({
+                  centerID: 2,
+                  name: "Wychwood Open Door",
+                })
+              }
               className="w-full bg-blue-500 text-white font-medium py-3 rounded-md hover:bg-blue-600 transition-colors"
             >
               Choose This Foodbank
@@ -126,7 +137,12 @@ export default function FBSelect() {
               Locate
             </button>
             <button
-              onClick={() => handleChoose("Hillcrest Community Food Bank")}
+              onClick={() =>
+                handleChoose({
+                  centerID: 3,
+                  name: "Hillcrest Community Food Bank",
+                })
+              }
               className="w-full bg-blue-500 text-white font-medium py-3 rounded-md hover:bg-blue-600 transition-colors"
             >
               Choose This Foodbank
@@ -134,7 +150,6 @@ export default function FBSelect() {
           </div>
         </div>
       </main>
-
 
       {/* Bottom Nav */}
       <nav className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full bg-white border-t border-gray-200 px-6 py-3">

@@ -214,7 +214,6 @@ app.post("/api/pantry/add", async (req, res) => {
   }
 });
 
-// fetch profile
 app.get("/api/user/profile", async (req, res) => {
   try {
     const userID = parseInt(req.query.userID, 10);
@@ -240,7 +239,6 @@ app.get("/api/user/profile", async (req, res) => {
   }
 });
 
-// Update profile
 app.put("/api/user/profile", async (req, res) => {
   const { userID, name, pushNotif, emailUpdates } = req.body;
 
@@ -265,6 +263,113 @@ app.put("/api/user/profile", async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     console.error("Error updating user profile:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// Updated Donation Endpoint: Remove or update FoodItem records and create a Donation record
+app.post("/api/donation", async (req, res) => {
+  const { userID, donationCenterID, donationItems } = req.body;
+
+  if (
+    !userID ||
+    !donationCenterID ||
+    !donationItems ||
+    !Array.isArray(donationItems) ||
+    donationItems.length === 0
+  ) {
+    return res.status(400).json({ error: "Missing required donation details" });
+  }
+
+  try {
+    const pool = await poolPromise;
+    const transaction = new sql.Transaction(pool);
+    await transaction.begin();
+
+    let donatedItemsForRecord = [];
+
+    // Process each donated item
+    for (const donatedItem of donationItems) {
+      const { itemID, donationQuantity } = donatedItem;
+      if (!itemID || !donationQuantity || donationQuantity <= 0) continue;
+
+      // Get current quantity and name from FoodItem
+      const itemRequest = new sql.Request(transaction);
+      const itemResult = await itemRequest
+        .input("itemID", sql.Int, itemID)
+        .query("SELECT quantity, name FROM FoodItem WHERE itemID = @itemID");
+
+      if (itemResult.recordset.length === 0) {
+        await transaction.rollback();
+        return res.status(404).json({ error: `FoodItem with ID ${itemID} not found` });
+      }
+
+      const currentQuantity = itemResult.recordset[0].quantity;
+      const itemName = itemResult.recordset[0].name;
+
+      if (donationQuantity > currentQuantity) {
+        await transaction.rollback();
+        return res.status(400).json({ error: `Donation quantity for itemID ${itemID} exceeds available quantity` });
+      }
+
+      const newQuantity = currentQuantity - donationQuantity;
+
+      if (newQuantity === 0) {
+        // If the entire quantity is donated, delete the record
+        const deleteRequest = new sql.Request(transaction);
+        await deleteRequest
+          .input("itemID", sql.Int, itemID)
+          .query("DELETE FROM FoodItem WHERE itemID = @itemID");
+      } else {
+        // Otherwise, update the record with the new quantity
+        const updateRequest = new sql.Request(transaction);
+        await updateRequest
+          .input("newQuantity", sql.Int, newQuantity)
+          .input("itemID", sql.Int, itemID)
+          .query("UPDATE FoodItem SET quantity = @newQuantity WHERE itemID = @itemID");
+      }
+
+      // Add to donatedItemsForRecord array using itemName instead of itemID
+      donatedItemsForRecord.push({ itemName, donationQuantity });
+    }
+
+    // Insert Donation record with donatedItemsForRecord as JSON
+    const donatedItemsJSON = JSON.stringify(donatedItemsForRecord);
+    const donationRequest = new sql.Request(transaction);
+    await donationRequest
+      .input("userID", sql.Int, userID)
+      .input("foodItems", sql.NVarChar(sql.MAX), donatedItemsJSON)
+      .input("donationCenterID", sql.Int, donationCenterID)
+      .query("INSERT INTO Donation (userID, foodItems, donationCenterID) VALUES (@userID, @foodItems, @donationCenterID)");
+
+    await transaction.commit();
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error processing donation:", error);
+    res.status(500).json({ error: "Server error during donation processing" });
+  }
+});
+
+app.get("/api/donation", async (req, res) => {
+  try {
+    const userID = parseInt(req.query.userID, 10);
+    if (isNaN(userID)) {
+      return res.status(400).json({ error: "Invalid userID" });
+    }
+    const pool = await poolPromise;
+    const result = await pool.request()
+      .input("userID", sql.Int, userID)
+      .query(`
+        SELECT d.donationID, d.userID, d.foodItems, d.donationCenterID, d.donationDate,
+               dc.name AS donationCenterName
+        FROM Donation d
+        LEFT JOIN DonationCenter dc ON d.donationCenterID = dc.centerID
+        WHERE d.userID = @userID
+        ORDER BY d.donationID DESC
+      `);
+    res.json(result.recordset);
+  } catch (error) {
+    console.error("Error fetching donations:", error);
     res.status(500).json({ error: "Server error" });
   }
 });
