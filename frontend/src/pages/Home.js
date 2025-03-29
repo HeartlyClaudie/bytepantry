@@ -7,19 +7,14 @@ export default function Home() {
   const navigate = useNavigate();
   const { accounts } = useMsal();
   const [userName, setUserName] = useState("");
-  const [items, setItems] = useState([]);
-
-  // Dummy helper to prevent build error
-  const getStatusClasses = (status) => {
-    switch (status) {
-      case "Expired":
-        return "bg-red-100 text-red-700";
-      case "Fresh":
-        return "bg-green-100 text-green-700";
-      default:
-        return "bg-gray-100 text-gray-700";
-    }
-  };
+  
+  //temporary items
+  const [items, setItems] = useState([
+    { itemID: 1, name: "Milk", expiryDate: "2025-04-04" },
+    { itemID: 2, name: "Eggs", expiryDate: "2025-03-29" },
+    { itemID: 3, name: "Bread", expiryDate: "2025-03-30" },
+    { itemID: 4, name: "Cheese", expiryDate: "2025-04-02" },
+  ]);
 
   useEffect(() => {
     if (accounts.length > 0) {
@@ -41,17 +36,16 @@ export default function Home() {
     getItems();
   }, [accounts]);
 
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
-  };
-
   const getDaysUntilExpiry = (expiryDate) => {
     const now = new Date();
     const expiry = new Date(expiryDate);
     const diffTime = expiry - now;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
+  };
+
+  const removeItem = (itemID) => {
+    setItems((prevItems) => prevItems.filter((item) => item.itemID !== itemID));
   };
 
   return (
@@ -63,57 +57,49 @@ export default function Home() {
       </header>
 
       <main className="flex-1 overflow-y-auto pb-24 px-6 w-full mx-auto sm:max-w-md md:max-w-xl lg:max-w-2xl">
-        <div className="flex items-center justify-between mt-6 mb-8">
+        <div className="text-center my-6">
+          <h2 className="text-xl font-semibold text-gray-700">Expiring Items</h2>
+        </div>
+
+        <div className="space-y-4">
+          {items.length > 0 ? (
+            items.map((item) => {
+              const daysLeft = getDaysUntilExpiry(item.expiryDate);
+              return (
+                <div key={item.itemID} className="bg-white rounded-lg shadow-sm p-4 flex justify-between items-center">
+                  <div>
+                    <span className="text-lg font-medium text-gray-800">{item.name}</span>
+                    <span className="text-sm text-gray-600 ml-2">
+                      {daysLeft > 0
+                        ? `${daysLeft} day${daysLeft > 1 ? "s" : ""} before expiration`
+                        : "Expired"}
+                    </span>
+                  </div>
+                  {daysLeft <= 0 && (
+                    <button
+                      onClick={() => removeItem(item.itemID)}
+                      className="text-red-500 hover:text-red-700 text-sm font-medium"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+              );
+            })
+          ) : (
+            <p className="text-gray-500 text-center">No expiring items found.</p>
+          )}
+        </div>
+
+        <div className="text-center mt-8">
           <button
             onClick={() => navigate("/newitem")}
             className="border border-gray-300 text-gray-600 px-6 py-3 rounded-md hover:bg-gray-100 transition-colors"
           >
             + Add Item
           </button>
-          <button
-            onClick={() => alert("Filter clicked")}
-            className="border border-gray-300 text-gray-600 px-6 py-3 rounded-md hover:bg-gray-100 transition-colors"
-          >
-            Filter
-          </button>
-        </div>
-
-        <div className="space-y-6">
-          {items.map((item) => {
-            const daysLeft = getDaysUntilExpiry(item.expiryDate);
-            return (
-              <div key={item.itemID} className="bg-white rounded-lg shadow-sm p-6 flex flex-col">
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-lg font-semibold text-gray-800">{item.name}</h2>
-                  <span className="text-sm text-gray-500">
-                    {daysLeft > 0
-                      ? `${daysLeft} day${daysLeft > 1 ? "s" : ""} left`
-                      : "Expired"}
-                  </span>
-                </div>
-
-                <p className="text-sm text-gray-500 mb-4">Expires: {item.expiryDate}</p>
-
-                <div className="flex space-x-4">
-                  <button
-                    onClick={() => alert("Edit clicked")}
-                    className="flex-1 border border-gray-300 text-gray-600 py-3 rounded-md hover:bg-gray-100 transition-colors"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => alert("Donate clicked")}
-                    className="flex-1 border border-gray-300 text-gray-600 py-3 rounded-md hover:bg-gray-100 transition-colors"
-                  >
-                    Donate
-                  </button>
-                </div>
-              </div>
-            );
-          })}
         </div>
       </main>
-
       <nav className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full bg-white border-t border-gray-200 px-6 py-3">
         <div className="max-w-md mx-auto flex justify-between">
           <button

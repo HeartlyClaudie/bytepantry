@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getPantryItems } from "../api";
+import { getPantryItems } from "../api"; // Assuming this function is making API calls to fetch data
 
 export default function ItemList() {
   const navigate = useNavigate();
@@ -11,6 +11,7 @@ export default function ItemList() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
 
+  // Fetch items from database
   useEffect(() => {
     const fetchItems = async () => {
       const userID = sessionStorage.getItem("userID");
@@ -20,8 +21,8 @@ export default function ItemList() {
       }
   
       try {
-        const data = await getPantryItems(userID); // 👈 Pass userID
-        setItems(data); // Replace dummy data with real data
+        const data = await getPantryItems(userID); // 👈 Pass userID to fetch items from DB
+        setItems(data); // Update state with fetched items
       } catch (error) {
         console.error("Failed to fetch pantry items:", error);
       }
@@ -30,17 +31,18 @@ export default function ItemList() {
     fetchItems();
   }, []);
 
+  // Filter and sort items
   useEffect(() => {
     let updatedItems = [...items];
 
-    // Filter
+    // Filter by search text
     if (filterText) {
       updatedItems = updatedItems.filter(item =>
         item.name.toLowerCase().includes(filterText.toLowerCase())
       );
     }
 
-    // Sort
+    // Sort by expiry or name
     updatedItems.sort((a, b) => {
       const aDays = getDaysUntilExpiry(a.expiryDate);
       const bDays = getDaysUntilExpiry(b.expiryDate);
@@ -144,6 +146,94 @@ export default function ItemList() {
           ))}
         </div>
       </main>
+      {/* Footer */}
+      <nav className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full bg-white border-t border-gray-200 px-6 py-3">
+        <div className="max-w-md mx-auto flex justify-between">
+          {/* Home */}
+          <button
+            onClick={() => navigate("/home")}
+            className="flex flex-col items-center text-gray-600 hover:text-blue-500"
+          >
+            <svg
+              className="w-6 h-6 mb-1"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                d="M3 12l2-2m0 0l7-7 7 7m-9 2v6m0 0H5a2 2 0 01-2-2v-4m6 6h4m2 0h2a2 2 0 002-2v-4m0 0l-2-2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <span className="text-xs font-semibold">Home</span>
+          </button>
+
+          {/* List */}
+          <button
+            onClick={() => navigate("/itemlist")}
+            className="flex flex-col items-center text-blue-500"
+          >
+            <svg
+              className="w-6 h-6 mb-1"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                d="M3 7h18M3 12h18M3 17h18"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <span className="text-xs">List</span>
+          </button>
+
+          {/* Donate */}
+          <button
+            onClick={() => navigate("/donation")}
+            className="flex flex-col items-center text-gray-600 hover:text-blue-500"
+          >
+            <svg
+              className="w-6 h-6 mb-1"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                d="M14 2a2 2 0 012 2v6H8V4a2 2 0 012-2h4zM8 10v10a2 2 0 002 2h4a2 2 0 002-2V10"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <span className="text-xs">Donate</span>
+          </button>
+
+          {/* Profile */}
+          <button
+            onClick={() => navigate("/profile")}
+            className="flex flex-col items-center text-gray-600 hover:text-blue-500"
+          >
+            <svg
+              className="w-6 h-6 mb-1"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                d="M5.121 17.804A4 4 0 019 16h6a4 4 0 013.879 1.804M12 11a4 4 0 100-8 4 4 0 000 8z"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <span className="text-xs">Profile</span>
+          </button>
+        </div>
+      </nav>
     </div>
   );
 }

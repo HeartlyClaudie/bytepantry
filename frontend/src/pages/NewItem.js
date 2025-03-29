@@ -11,6 +11,7 @@ export default function NewItem() {
   const [expiryDate, setExpiryDate] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [isScanning, setIsScanning] = useState(false);
+  const [scanSuccessMessage, setScanSuccessMessage] = useState(""); // State for success message
   const videoRef = useRef(null);
   const scannerContainerRef = useRef(null);
   let mediaStream = null;
@@ -35,12 +36,15 @@ export default function NewItem() {
       const data = await response.json();
       if (data.product && data.product.product_name) {
         setFoodName(data.product.product_name);
+        setScanSuccessMessage("Item Scanned Successfully!"); // Show success message
       } else {
         setFoodName("Unknown Product");
+        setScanSuccessMessage(""); // Clear success message if product is unknown
       }
     } catch (error) {
       console.error("Error fetching product:", error);
       setFoodName("Error fetching product");
+      setScanSuccessMessage(""); // Clear success message if there's an error
     }
   };
 
@@ -66,11 +70,18 @@ export default function NewItem() {
 
   const stopCamera = () => {
     if (mediaStream) {
-      mediaStream.getTracks().forEach((track) => track.stop());
+      mediaStream.getTracks().forEach((track) => {
+        track.stop(); // Stop each track (audio and video)
+      });
+      mediaStream = null; // Clear the media stream reference
     }
     Quagga.stop();
     if (scannerContainerRef.current) scannerContainerRef.current.style.display = "none";
     setIsScanning(false);
+
+    // Clear the foodName field and the success message when stopping the camera
+    setFoodName(""); 
+    setScanSuccessMessage(""); // Reset the success message
   };
 
   const startBarcodeScanner = () => {
@@ -96,7 +107,12 @@ export default function NewItem() {
       let scannedBarcode = result.codeResult.code;
       if (scannedBarcode === lastScanned) return;
       lastScanned = scannedBarcode;
-      fetchFoodNameFromBarcode(scannedBarcode);
+      await fetchFoodNameFromBarcode(scannedBarcode);
+
+      // If the food name is valid, stop scanning and close the camera
+      if (foodName && foodName !== "Unknown Product") {
+        stopCamera();
+      }
     });
   };
 
@@ -124,7 +140,7 @@ export default function NewItem() {
     } catch (error) {
       console.error("❌ Error adding pantry item:", error);
     }
-  };    
+  };
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -146,18 +162,47 @@ export default function NewItem() {
           {isScanning ? "Stop Scanning" : "Start Scanning"}
         </button>
 
-
         {/* Add Food Form */}
         <div className="mb-6">
-          <label className="block text-gray-700 font-medium mb-2">Food Name</label>
-          <input
-            type="text"
-            value={foodName}
-            onChange={(e) => setFoodName(e.target.value)}
-            placeholder="Enter food name"
-            className="w-full border border-gray-300 rounded-md p-4 focus:outline-none focus:ring-1 focus:ring-blue-500"
+  <label className="block text-gray-700 font-medium mb-2">Food Name</label>
+  <div className="relative">
+    <input
+      type="text"
+      value={foodName}
+      onChange={(e) => setFoodName(e.target.value)}
+      placeholder="Enter food name"
+      className="w-full border border-gray-300 rounded-md p-4 focus:outline-none focus:ring-1 focus:ring-blue-500 pr-10"
+    />
+    {foodName && (
+      <button
+        onClick={() => setFoodName("")}
+        className="absolute top-1/2 right-3 transform -translate-y-1/2 text-gray-600"
+      >
+        <svg
+          className="w-4 h-4"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          viewBox="0 0 24 24"
+        >
+          <path
+            d="M6 18L18 6M6 6l12 12"
+            strokeLinecap="round"
+            strokeLinejoin="round"
           />
-        </div>
+        </svg>
+      </button>
+    )}
+  </div>
+</div>
+
+
+        {/* Display success message after scanning */}
+        {scanSuccessMessage && (
+          <div className="text-green-600 mb-4 font-semibold">
+            {scanSuccessMessage}
+          </div>
+        )}
 
         <div className="mb-6">
           <label className="block text-gray-700 font-medium mb-2">Category</label>
@@ -185,7 +230,6 @@ export default function NewItem() {
         </div>
 
         {/* Quantity */}
-
         <div className="mb-6">
           <label className="block text-gray-700 font-medium mb-2">Quantity</label>
           <div className="flex items-center border border-gray-300 rounded-md">
@@ -233,7 +277,7 @@ export default function NewItem() {
           {/* List */}
           <button
             onClick={() => navigate("/itemlist")}
-            className="flex flex-col items-center text-blue-500"
+            className="flex flex-col items-center text-gray-600 hover:text-blue-500"
           >
             <svg
               className="w-6 h-6 mb-1"
@@ -271,7 +315,7 @@ export default function NewItem() {
             </svg>
             <span className="text-xs">Donate</span>
           </button>
-
+          
           {/* Profile */}
           <button
             onClick={() => navigate("/profile")}
