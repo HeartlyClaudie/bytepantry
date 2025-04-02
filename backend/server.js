@@ -6,6 +6,7 @@ const bodyParser = require("body-parser");
 const sql = require("mssql");
 const fs = require("fs");
 const jwt = require("jsonwebtoken");
+const axios = require("axios");
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -353,14 +354,36 @@ app.post("/api/donation", async (req, res) => {
     // Insert Donation record with donatedItemsForRecord as JSON
     const donatedItemsJSON = JSON.stringify(donatedItemsForRecord);
     const donationRequest = new sql.Request(transaction);
-    await donationRequest
+    const donationResult = await donationRequest
       .input("userID", sql.Int, userID)
       .input("foodItems", sql.NVarChar(sql.MAX), donatedItemsJSON)
       .input("donationCenterID", sql.Int, donationCenterID)
-      .query("INSERT INTO Donation (userID, foodItems, donationCenterID) VALUES (@userID, @foodItems, @donationCenterID)");
+      .query(`
+              INSERT INTO Donation (userID, foodItems, donationCenterID)
+              OUTPUT INSERTED.donationID
+              VALUES (@userID, @foodItems, @donationCenterID)
+      `);
+
+    const donationID = donationResult.recordset[0].donationID;
+
+    // 📨 Trigger notification
+    const notifyRequest = new sql.Request(transaction);
+    await notifyRequest
+      .input("userID", sql.Int, userID)
+      .input("donationID", sql.Int, donationID)
+      .input("status", sql.NVarChar, "awaiting")
+      .execute("InsertDonationNotification");
 
     await transaction.commit();
     res.json({ success: true });
+
+    //Trigger email update
+
+    await axios.post("https://prod-06.canadacentral.logic.azure.com:443/workflows/a6768b85498244f69502508b1b004cd2/triggers/When_a_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=QfdAUkb4irKpApawA3Hu8lTgsdpGYjlxhHw456OxS9U", {
+      donationID,
+      message: `Donation is awaiting with Donation ID: ${donationID}`
+    });
+      
   } catch (error) {
     console.error("Error processing donation:", error);
     res.status(500).json({ error: "Server error during donation processing" });
