@@ -32,7 +32,7 @@ export default function NewItem() {
   // Fetch food name using an API call
   const fetchFoodNameFromBarcode = async (barcode) => {
     try {
-      const response = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
+      const response = await fetch('https://world.openfoodfacts.org/api/v0/product/${barcode}.json');
       const data = await response.json();
       if (data.product && data.product.product_name) {
         setFoodName(data.product.product_name);

@@ -7,14 +7,7 @@ export default function Home() {
   const navigate = useNavigate();
   const { accounts } = useMsal();
   const [userName, setUserName] = useState("");
-  
-  //temporary items
-  const [items, setItems] = useState([
-    { itemID: 1, name: "Milk", expiryDate: "2025-04-04" },
-    { itemID: 2, name: "Eggs", expiryDate: "2025-03-29" },
-    { itemID: 3, name: "Bread", expiryDate: "2025-03-30" },
-    { itemID: 4, name: "Cheese", expiryDate: "2025-04-02" },
-  ]);
+  const [items, setItems] = useState([]);
 
   useEffect(() => {
     if (accounts.length > 0) {
@@ -22,7 +15,7 @@ export default function Home() {
       setUserName(name);
     }
 
-    const getItems = async () => {
+    const fetchItems = async () => {
       try {
         const storedUserID = sessionStorage.getItem("userID");
         if (!storedUserID) return;
@@ -33,19 +26,14 @@ export default function Home() {
       }
     };
 
-    getItems();
+    fetchItems();
   }, [accounts]);
 
   const getDaysUntilExpiry = (expiryDate) => {
     const now = new Date();
     const expiry = new Date(expiryDate);
     const diffTime = expiry - now;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
-  };
-
-  const removeItem = (itemID) => {
-    setItems((prevItems) => prevItems.filter((item) => item.itemID !== itemID));
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
 
   return (
@@ -75,14 +63,6 @@ export default function Home() {
                         : "Expired"}
                     </span>
                   </div>
-                  {daysLeft <= 0 && (
-                    <button
-                      onClick={() => removeItem(item.itemID)}
-                      className="text-red-500 hover:text-red-700 text-sm font-medium"
-                    >
-                      Remove
-                    </button>
-                  )}
                 </div>
               );
             })
