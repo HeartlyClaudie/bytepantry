@@ -9,6 +9,21 @@ function capitalize(str) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
+// Helper to get the icon path for a category
+function getCategoryIcon(category) {
+  // Assuming your icons are named exactly as the lowercased category (e.g., "meat.png", "vegetables.png")
+  const formattedCategory = category.toLowerCase().trim();
+  return `/icons/${formattedCategory}.png`;
+}
+
+// Helper to calculate days until expiry
+function getDaysUntilExpiry(expiryDate) {
+  const now = new Date();
+  const expiry = new Date(expiryDate);
+  const diffTime = expiry - now;
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+}
+
 export default function Donation() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -35,7 +50,7 @@ export default function Donation() {
     document.body.style.overflow = showConfirmModal || showSuccessModal ? "hidden" : "auto";
   }, [showConfirmModal, showSuccessModal]);
 
-  // Fetch the user's pantry items
+  // Fetch the user's pantry items and filter eligible ones (expiration >= 10 days)
   const fetchPantryItems = async () => {
     const userID = sessionStorage.getItem("userID");
     if (!userID) {
@@ -44,8 +59,11 @@ export default function Donation() {
     }
     try {
       const items = await getPantryItems(userID);
+      // Filter out items that are expiring in less than 10 days
+      const eligibleItems = items.filter(item => getDaysUntilExpiry(item.expiryDate) >= 10);
+      
       const grouped = {};
-      items.forEach((item) => {
+      eligibleItems.forEach((item) => {
         let catName =
           item.category && item.category.trim()
             ? capitalize(item.category)
@@ -55,9 +73,9 @@ export default function Donation() {
       });
       setCategoriesData(grouped);
 
-      // Reset donation quantities
+      // Reset donation quantities for eligible items only
       const initialQuantities = {};
-      items.forEach((item) => {
+      eligibleItems.forEach((item) => {
         initialQuantities[item.itemID] = 0;
       });
       setDonationQuantities(initialQuantities);
@@ -82,8 +100,6 @@ export default function Donation() {
       console.error("Error fetching past donations:", error);
     }
   };
-  
-
 
   // On mount, load pantry items and past donations
   useEffect(() => {
@@ -150,10 +166,8 @@ export default function Donation() {
         donationItems,
       });
       if (response.data && response.data.success) {
-        // Close confirmation, show success
         setShowConfirmModal(false);
         setShowSuccessModal(true);
-        // Refresh data
         fetchPantryItems();
         fetchPastDonations();
       } else {
@@ -185,13 +199,13 @@ export default function Donation() {
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto pb-24 px-6 w-full mx-auto sm:max-w-md md:max-w-xl lg:max-w-2xl">
         {/* Select Items Section */}
-        <section className="mb-4 mt-6">
+        <section className="mt-6 mb-2">
           <h3 className="text-sm font-semibold text-gray-500 mb-3 uppercase tracking-wide">
             Select Items to Donate
           </h3>
-          <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="bg-white rounded-lg shadow-sm pt-6 px-6 pb-2">
             {Object.keys(categoriesData).length === 0 ? (
-              <p>No items found in your pantry.</p>
+              <p>No eligible items found in your pantry.</p>
             ) : (
               Object.keys(categoriesData).map((category) => (
                 <div key={category} className="mb-4">
@@ -199,7 +213,14 @@ export default function Donation() {
                     className="flex items-center justify-between cursor-pointer"
                     onClick={() => toggleCategory(category)}
                   >
-                    <span className="text-gray-700 font-medium">{category}</span>
+                    <div className="flex items-center space-x-2">
+                      <img
+                        src={getCategoryIcon(category)}
+                        alt={category}
+                        className="w-5 h-5"
+                      />
+                      <span className="text-gray-700 font-medium">{category}</span>
+                    </div>
                     <svg
                       className={`w-4 h-4 text-gray-500 transform transition-transform duration-300 ${
                         openCategories.includes(category) ? "rotate-90" : ""
@@ -261,7 +282,7 @@ export default function Donation() {
         </section>
 
         {/* Food Bank Location Section */}
-        <section className="mb-8">
+        <section className="mt-6 mb-8">
           <h3 className="text-sm font-semibold text-gray-500 mb-3 uppercase tracking-wide">
             Select Food Bank Location
           </h3>
@@ -309,12 +330,11 @@ export default function Donation() {
           <h3 className="text-sm font-semibold text-gray-500 mb-3 uppercase tracking-wide">
             Past Donations
           </h3>
-          <div className="bg-white rounded-lg shadow-sm p-6 space-y-4">
+          <div className="bg-white rounded-lg shadow-sm p-6 space-y-4 max-h-80 overflow-y-auto">
             {pastDonations.length === 0 ? (
               <p>No past donations found.</p>
             ) : (
               pastDonations.map((donation) => {
-                // Parse the foodItems JSON string
                 let items = [];
                 try {
                   items = JSON.parse(donation.foodItems);
@@ -400,7 +420,7 @@ export default function Donation() {
                 className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
                 type="button"
               >
-                Your Welcome!
+                You're Welcome!
               </button>
             </div>
           </div>
@@ -436,16 +456,10 @@ export default function Donation() {
           </button>
           <button
             onClick={() => navigate("/donation")}
-            className="flex flex-col items-center text-blue-500"
+            className="flex flex-col items-center text-red-500"
             type="button"
           >
-            <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path
-                d="M14 2a2 2 0 012 2v6H8V4a2 2 0 012-2h4zM8 10v10a2 2 0 002 2h4a2 2 0 002-2V10"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+            <img src="/icons/donate.png" alt="Donate" className="w-6 h-6 mb-1" />
             <span className="text-xs">Donate</span>
           </button>
           <button

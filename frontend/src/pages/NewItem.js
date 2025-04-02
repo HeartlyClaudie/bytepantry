@@ -167,10 +167,14 @@ export default function NewItem() {
             className="w-full border border-gray-300 rounded-md p-4 focus:outline-none focus:ring-1 focus:ring-blue-500"
           >
             <option value="">Select category</option>
+            <option value="Beverages">Beverages</option>
+            <option value="Canned">Canned Goods</option>
+            <option value="Condiments">Condiments</option>
             <option value="Dairy">Dairy</option>
             <option value="Meat">Meat</option>
-            <option value="Produce">Produce</option>
             <option value="Grains">Grains</option>
+            <option value="Produce">Produce</option>
+            <option value="Snacks">Snacks</option>
           </select>
         </div>
 
@@ -254,21 +258,14 @@ export default function NewItem() {
           {/* Donate */}
           <button
             onClick={() => navigate("/donation")}
-            className="flex flex-col items-center text-gray-600 hover:text-blue-500"
+            className="flex flex-col items-center text-gray-600 hover:text-red-500"
+            type="button"
           >
-            <svg
+            <img
+              src="/icons/donate.png"
+              alt="Donate"
               className="w-6 h-6 mb-1"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M14 2a2 2 0 012 2v6H8V4a2 2 0 012-2h4zM8 10v10a2 2 0 002 2h4a2 2 0 002-2V10"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+            />
             <span className="text-xs">Donate</span>
           </button>
 

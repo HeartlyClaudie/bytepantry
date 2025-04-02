@@ -267,6 +267,23 @@ app.put("/api/user/profile", async (req, res) => {
   }
 });
 
+app.delete("/api/pantry/item/:itemID", async (req, res) => {
+  try {
+    const { itemID } = req.params;
+    if (!itemID) {
+      return res.status(400).json({ error: "Missing itemID" });
+    }
+    const pool = await poolPromise;
+    await pool.request()
+      .input("itemID", sql.Int, itemID)
+      .query("DELETE FROM FoodItem WHERE itemID = @itemID");
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting food item:", error.message);
+    res.status(500).json({ error: "Server error while deleting food item" });
+  }
+});
+
 // Updated Donation Endpoint: Remove or update FoodItem records and create a Donation record
 app.post("/api/donation", async (req, res) => {
   const { userID, donationCenterID, donationItems } = req.body;

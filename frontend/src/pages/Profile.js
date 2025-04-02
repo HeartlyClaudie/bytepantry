@@ -230,21 +230,14 @@ export default function Profile() {
 
           <button
             onClick={() => navigate("/donation")}
-            className="flex flex-col items-center text-gray-600 hover:text-blue-500"
+            className="flex flex-col items-center text-gray-600 hover:text-red-500"
+            type="button"
           >
-            <svg
+            <img
+              src="/icons/donate.png"
+              alt="Donate"
               className="w-6 h-6 mb-1"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M14 2a2 2 0 012 2v6H8V4a2 2 0 012-2h4zM8 10v10a2 2 0 002 2h4a2 2 0 002-2V10"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+            />
             <span className="text-xs">Donate</span>
           </button>
 
