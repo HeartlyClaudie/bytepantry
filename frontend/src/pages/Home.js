@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useMsal } from "@azure/msal-react";
-import { logout, getPantryItems } from "../api";
+import { logout, getPantryItems, deletePantryItem } from "../api";
 import { useNavigate } from "react-router-dom";
 
 export default function Home() {
@@ -36,6 +36,17 @@ export default function Home() {
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
 
+  const handleDelete = async (itemID) => {
+    try {
+      const success = await deletePantryItem(itemID);
+      if (success) {
+        setItems((prevItems) => prevItems.filter((item) => item.itemID !== itemID));
+      }
+    } catch (error) {
+      console.error("Failed to delete item:", error);
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <header className="sticky top-0 z-10 bg-white border-b border-gray-200 px-6 py-4">
@@ -63,6 +74,12 @@ export default function Home() {
                         : "Expired"}
                     </span>
                   </div>
+                  <button
+                    onClick={() => handleDelete(item.itemID)}
+                    className="bg-red-500 text-white px-3 py-1 rounded-md text-sm hover:bg-red-700 transition"
+                  >
+                    Remove
+                  </button>
                 </div>
               );
             })
