@@ -40,12 +40,19 @@ export default function Home() {
     try {
       const success = await deletePantryItem(itemID);
       if (success) {
-        setItems((prevItems) => prevItems.filter((item) => item.itemID !== itemID));
+        setItems((prevItems) => {
+          const updatedItems = prevItems.filter((item) => item.itemID !== itemID);
+          console.log("Updated items after delete:", updatedItems);
+          return updatedItems;
+        });
+      } else {
+        console.warn("Delete failed, item not removed from state.");
       }
     } catch (error) {
       console.error("Failed to delete item:", error);
     }
   };
+  
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">

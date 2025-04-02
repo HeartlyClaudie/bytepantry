@@ -277,3 +277,27 @@ app.get("/", (req, res) => {
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`BytePantry API listening on port ${PORT}`);
 });
+
+// Expiring items delete route
+app.delete("/api/pantry/:itemID", async (req, res) => {
+  try {
+      const itemID = parseInt(req.params.itemID, 10); // Convert to integer if needed
+
+      if (isNaN(itemID)) {
+          return res.status(400).json({ success: false, message: "Invalid item ID" });
+      }
+
+      // Ensure `id` matches your actual database column name
+      const result = await PantryItem.destroy({ where: { id: itemID } });
+
+      if (result > 0) {
+          res.status(200).json({ success: true, message: "Item deleted successfully." });
+      } else {
+          res.status(404).json({ success: false, message: "Item not found." });
+      }
+  } catch (error) {
+      console.error("Error deleting item:", error);
+      res.status(500).json({ success: false, message: "Internal server error." });
+  }
+});
+

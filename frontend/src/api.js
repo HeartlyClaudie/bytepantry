@@ -50,12 +50,14 @@ export const getPantryItems = async (userID) => {
 export const deletePantryItem = async (itemID) => {
   try {
     const response = await api.delete(`/api/pantry/${itemID}`);
+    console.log("✅ Delete response:", response);
     return response.data;
   } catch (error) {
-    console.error("❌ Error deleting pantry item:", error);
+    console.error("❌ Error deleting pantry item:", error.response?.data || error.message);
     throw error;
   }
 };
+
 
 
 // Add new item to pantry
