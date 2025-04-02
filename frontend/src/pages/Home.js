@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useMsal } from "@azure/msal-react";
-import { logout, getPantryItems } from "../api";
+import { logout, getPantryItems, deletePantryItem } from "../api";
 import { useNavigate } from "react-router-dom";
 
 export default function Home() {
@@ -9,25 +9,13 @@ export default function Home() {
   const [userName, setUserName] = useState("");
   const [items, setItems] = useState([]);
 
-  // Dummy helper to prevent build error
-  const getStatusClasses = (status) => {
-    switch (status) {
-      case "Expired":
-        return "bg-red-100 text-red-700";
-      case "Fresh":
-        return "bg-green-100 text-green-700";
-      default:
-        return "bg-gray-100 text-gray-700";
-    }
-  };
-
   useEffect(() => {
     if (accounts.length > 0) {
       const name = accounts[0].name || "User";
       setUserName(name);
     }
 
-    const getItems = async () => {
+    const fetchItems = async () => {
       try {
         const storedUserID = sessionStorage.getItem("userID");
         if (!storedUserID) return;
@@ -38,20 +26,25 @@ export default function Home() {
       }
     };
 
-    getItems();
+    fetchItems();
   }, [accounts]);
-
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
-  };
 
   const getDaysUntilExpiry = (expiryDate) => {
     const now = new Date();
     const expiry = new Date(expiryDate);
     const diffTime = expiry - now;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  };
+
+  const handleDelete = async (itemID) => {
+    try {
+      const success = await deletePantryItem(itemID);
+      if (success) {
+        setItems((prevItems) => prevItems.filter((item) => item.itemID !== itemID));
+      }
+    } catch (error) {
+      console.error("Failed to delete item:", error);
+    }
   };
 
   return (
@@ -63,57 +56,47 @@ export default function Home() {
       </header>
 
       <main className="flex-1 overflow-y-auto pb-24 px-6 w-full mx-auto sm:max-w-md md:max-w-xl lg:max-w-2xl">
-        <div className="flex items-center justify-between mt-6 mb-8">
+        <div className="text-center my-6">
+          <h2 className="text-xl font-semibold text-gray-700">Expiring Items</h2>
+        </div>
+
+        <div className="space-y-4">
+          {items.length > 0 ? (
+            items.map((item) => {
+              const daysLeft = getDaysUntilExpiry(item.expiryDate);
+              return (
+                <div key={item.itemID} className="bg-white rounded-lg shadow-sm p-4 flex justify-between items-center">
+                  <div>
+                    <span className="text-lg font-medium text-gray-800">{item.name}</span>
+                    <span className="text-sm text-gray-600 ml-2">
+                      {daysLeft > 0
+                        ? `${daysLeft} day${daysLeft > 1 ? "s" : ""} before expiration`
+                        : "Expired"}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => handleDelete(item.itemID)}
+                    className="bg-red-500 text-white px-3 py-1 rounded-md text-sm hover:bg-red-700 transition"
+                  >
+                    Remove
+                  </button>
+                </div>
+              );
+            })
+          ) : (
+            <p className="text-gray-500 text-center">No expiring items found.</p>
+          )}
+        </div>
+
+        <div className="text-center mt-8">
           <button
             onClick={() => navigate("/newitem")}
             className="border border-gray-300 text-gray-600 px-6 py-3 rounded-md hover:bg-gray-100 transition-colors"
           >
             + Add Item
           </button>
-          <button
-            onClick={() => alert("Filter clicked")}
-            className="border border-gray-300 text-gray-600 px-6 py-3 rounded-md hover:bg-gray-100 transition-colors"
-          >
-            Filter
-          </button>
-        </div>
-
-        <div className="space-y-6">
-          {items.map((item) => {
-            const daysLeft = getDaysUntilExpiry(item.expiryDate);
-            return (
-              <div key={item.itemID} className="bg-white rounded-lg shadow-sm p-6 flex flex-col">
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-lg font-semibold text-gray-800">{item.name}</h2>
-                  <span className="text-sm text-gray-500">
-                    {daysLeft > 0
-                      ? `${daysLeft} day${daysLeft > 1 ? "s" : ""} left`
-                      : "Expired"}
-                  </span>
-                </div>
-
-                <p className="text-sm text-gray-500 mb-4">Expires: {item.expiryDate}</p>
-
-                <div className="flex space-x-4">
-                  <button
-                    onClick={() => alert("Edit clicked")}
-                    className="flex-1 border border-gray-300 text-gray-600 py-3 rounded-md hover:bg-gray-100 transition-colors"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => alert("Donate clicked")}
-                    className="flex-1 border border-gray-300 text-gray-600 py-3 rounded-md hover:bg-gray-100 transition-colors"
-                  >
-                    Donate
-                  </button>
-                </div>
-              </div>
-            );
-          })}
         </div>
       </main>
-
       <nav className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full bg-white border-t border-gray-200 px-6 py-3">
         <div className="max-w-md mx-auto flex justify-between">
           <button
